@@ -1,0 +1,236 @@
+package project.admin;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import project.bookclub.vo.BookClubVO;
+import project.member.MemberVO;
+import project.trade.TradeVO;
+import project.util.paging.SearchVO;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class AdminService {
+
+    private final AdminMapper adminMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public AdminVO login(String id, String rawPwd) {
+        AdminVO admin = adminMapper.getAdminById(id);
+
+        if (admin != null) {
+            boolean isMatch = passwordEncoder.matches(rawPwd, admin.getAdmin_password());
+            if (isMatch) return admin;
+        } else {
+            log.warn("해당 아이디의 관리자가 없습니다 : {}", id);
+        }
+        return null;
+    }
+
+    // --- 통계 ---
+    public int countAllMembers() { return adminMapper.countAllMembers(); }
+    public int countAllTrades() { return adminMapper.countAllTrades(); }
+    public int countAllBookClubs() { return adminMapper.countAllBookClubs(); }
+
+    // --- 검색 (API) ---
+    public List<MemberVO> searchMembers(SearchVO searchVO) {
+        return adminMapper.searchMembers(searchVO);
+    }
+
+    public List<TradeVO> searchTrades(SearchVO searchVO) {
+        return adminMapper.searchTrades(searchVO);
+    }
+
+    public List<TradeVO> searchSafePayList(SearchVO searchVO) {
+        return adminMapper.searchSafePayList(searchVO);
+    }
+
+    public List<BookClubVO> searchBookClubs(SearchVO searchVO) {
+        return adminMapper.searchBookClubs(searchVO);
+    }
+
+    public List<LoginInfoVO> searchAdminLoginLogs(SearchVO searchVO) {
+        return adminMapper.searchAdminLoginLogs(searchVO);
+    }
+
+    public List<LoginInfoVO> searchUsersLoginLogs(SearchVO searchVO) {
+        return adminMapper.searchUsersLoginLogs(searchVO);
+    }
+
+    @Transactional
+    public void handleMemberAction(Long seq, String action) {
+        if ("BAN".equals(action)) {
+            adminMapper.updateMemberStatus(seq, "BAN"); // 정지 상태
+        } else if ("ACTIVE".equals(action)) {
+            adminMapper.updateMemberStatus(seq, "JOIN"); // 정상 상태 (JOIN으로 매핑)
+        } else if ("DELETE".equals(action)) {
+            adminMapper.deleteMember(seq); // 탈퇴 처리 (Deleted DTM 업데이트)
+        }
+    }
+
+    @Transactional
+    public void handleTradeAction(Long seq, String action) {
+        if ("DELETE".equals(action)) {
+            adminMapper.deleteTrade(seq); // 삭제 처리 (Del DTM 업데이트)
+        } else if ("BAN".equals(action)) {
+            adminMapper.updateTradeStatus(seq, "BAN"); // 판매 금지 상태
+        } else if ("SALE".equals(action)) {
+            adminMapper.updateTradeStatus(seq, "SALE"); // 판매 중 상태로 복구 (Undo)
+        } else {
+            // 그 외 RESERVED, SOLD 등 처리
+            adminMapper.updateTradeStatus(seq, action);
+        }
+    }
+
+    @Transactional
+    public void deleteBookClub(Long seq) {
+        adminMapper.deleteBookClub(seq);
+    }
+
+    // --- [NEW] 차트 데이터 조회 ---
+    public Map<String, Object> getChartData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("dailySignups", adminMapper.selectDailySignupStats());
+        data.put("dailyTrades", adminMapper.selectDailyTradeStats());
+        data.put("categories", adminMapper.selectCategoryStats());
+        return data;
+    }
+
+    // 목록
+    public List<MemberVO> getRecentMembers() { return adminMapper.selectRecentMembers(); }
+    public List<TradeVO> getRecentTrades() { return adminMapper.selectRecentTrades(); }
+    public List<BookClubVO> getRecentBookClubs() { return adminMapper.selectRecentBookClubs(); }
+
+    // 조회
+    public List<LoginInfoVO> getMemberLoginLogs() {
+        return adminMapper.selectMemberLoginLogs();
+    }
+    public List<LoginInfoVO> getAdminLoginLogs() {
+        return adminMapper.selectAdminLoginLogs();
+    }
+
+    // 관리자 로그인 기록
+    public void recordAdminLogin(Long admin_seq, String login_ip) {
+        adminMapper.insertAdminLogin(admin_seq, login_ip);
+    }
+    // 관리자 로그아웃 기록
+    public void recordAdminLogout(Long admin_seq, String logout_ip) {
+        adminMapper.updateAdminLogout(admin_seq, logout_ip);
+    }
+
+    // 회원 로그인 기록
+    public void recordMemberLogin(Long member_seq, String login_ip) {
+        adminMapper.insertMemberLogin(member_seq, login_ip);
+    }
+    //회원 로그아웃 기록
+    public void recordMemberLogout(Long member_seq, String logout_ip) {
+        adminMapper.updateMemberLogout(member_seq, logout_ip);
+    }
+
+    // [배너 관리]
+    public List<BannerVO> getBanners() {
+        return adminMapper.selectBanners();
+    }
+
+    @Transactional
+    public void saveBanner(BannerVO banner) {
+        adminMapper.insertBanner(banner);
+    }
+
+    @Transactional
+    public void deleteBanner(Long seq) {
+        adminMapper.deleteBanner(seq);
+    }
+
+    @Transactional
+    public Long saveTempPage(String title, String content) {
+        // TEMP_PAGE 테이블에 저장하고 PK(ID)를 반환하는 로직 구현 필요
+        // 여기서는 Mapper 호출 로직 작성
+        TempPageVO vo = new TempPageVO();
+        vo.setTitle(title);
+        vo.setContent(content);
+        adminMapper.insertTempPage(vo);
+        return vo.getPageSeq();
+    }
+
+    // [추가] 임시 페이지 조회
+    public TempPageVO getTempPage(Long id) {
+        return adminMapper.selectTempPage(id);
+    }
+
+    // 공지사항 저장
+    public void insertNotice(NoticeVO noticeVO) {
+        adminMapper.insertNotice(noticeVO);
+    }
+
+    // 공지사항 목록 조회
+
+    public List<NoticeVO> searchNotices(SearchVO searchVO) {
+        return adminMapper.searchNotices(searchVO);
+    }
+
+    public int countAllNoticesBySearch(SearchVO searchVO) {
+        return adminMapper.countAllNoticesBySearch(searchVO);
+    }
+
+    public List<NoticeVO> selectNotices() {
+        return adminMapper.selectNotices();
+    }
+
+    public List<NoticeVO> selectActiveNotices(SearchVO searchVO) {
+        return adminMapper.selectActiveNotices(searchVO);
+    }
+    public int countActiveNotices(SearchVO searchVO) {
+        return adminMapper.countActiveNotices(searchVO);
+    }
+
+    public NoticeVO selectNotice(Long notice_seq) {
+        return adminMapper.selectNotice(notice_seq);
+    }
+
+    @Transactional
+    public void increaseViewCount(Long notice_seq) {
+        adminMapper.increaseViewCount(notice_seq);
+    }
+
+    @Transactional
+    public void deleteNotice(Long notice_seq) {
+        adminMapper.deleteNotice(notice_seq);
+    }
+
+    @Transactional
+    public void updateNotice(NoticeVO noticeVO) {
+        adminMapper.updateNotice(noticeVO);
+    }
+
+    public int countAllMembersBySearch(SearchVO searchVO) {
+        return adminMapper.countAllMembersBySearch(searchVO);
+    }
+
+    public int countAllTradesBySearch(SearchVO searchVO) {
+        return adminMapper.countAllTradesBySearch(searchVO);
+    }
+
+    public int countAllSafePayListBySearch(SearchVO searchVO) {
+        return adminMapper.countAllSafePayListBySearch(searchVO);
+    }
+
+    public int countAllGroupsBySearch(SearchVO searchVO) {
+        return adminMapper.countAllGroupsBySearch(searchVO);
+    }
+
+    public int countAdminLoginLogsBySearch(SearchVO searchVO) {
+        return adminMapper.countAdminLoginLogsBySearch(searchVO);
+    }
+
+    public int countUsersLoginLogsBySearch(SearchVO searchVO) {
+        return adminMapper.countUsersLoginLogsBySearch(searchVO);
+    }
+}

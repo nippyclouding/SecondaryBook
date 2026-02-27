@@ -1,0 +1,223 @@
+<div
+    class="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-2xl relative text-left font-sans flex flex-col h-full min-h-[800px]">
+    <!-- Header -->
+    <div
+        class="px-6 py-4 border-b border-gray-100 bg-white/90 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-30">
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <div
+                class="w-10 h-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-indigo-500 shrink-0">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-gray-900 leading-none">성능 테스트 포트폴리오</h1>
+                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-semibold text-nowrap">k6 & AWS
+                    CloudWatch Metrics</p>
+            </div>
+        </div>
+
+        <div
+            class="flex gap-1 p-1 bg-gray-50 rounded-xl border border-gray-100 overflow-x-auto w-full md:w-auto no-scrollbar scroll-smooth">
+            <button onclick="switchLoadTestTab('smoke')" id="load-tab-btn-smoke"
+                class="load-tab-btn px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap bg-white text-indigo-600 shadow-sm border border-gray-200 flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4"></i> 스모크
+            </button>
+            <button onclick="switchLoadTestTab('load')" id="load-tab-btn-load"
+                class="load-tab-btn px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4"></i> 부하
+            </button>
+            <button onclick="switchLoadTestTab('stress')" id="load-tab-btn-stress"
+                class="load-tab-btn px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                <i data-lucide="flame" class="w-4 h-4"></i> 스트레스
+            </button>
+            <button onclick="switchLoadTestTab('spike')" id="load-tab-btn-spike"
+                class="load-tab-btn px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                <i data-lucide="zap-off" class="w-4 h-4"></i> 스파이크
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="p-4 md:p-8 bg-slate-50/50 flex-grow relative overflow-y-auto">
+
+        <!-- Summary Section -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center gap-2 text-gray-900" id="load-test-title">
+                        <!-- Title injected via JS -->
+                    </h2>
+                    <p class="text-slate-500 mt-1 text-sm leading-relaxed" id="load-test-desc">
+                        <!-- Description injected via JS -->
+                    </p>
+                </div>
+                <div id="load-test-badge"
+                    class="px-3 py-1.5 rounded-full font-bold text-xs flex items-center gap-2 shadow-sm border shrink-0">
+                    <!-- Badge injected via JS -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Target Domain</p>
+                    <p class="font-bold text-slate-700 text-sm break-all">www.shinhan6th.com</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Test Tool</p>
+                    <p class="font-bold text-slate-700 text-sm">k6 (VUs Injection)</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Duration</p>
+                    <p class="font-bold text-slate-700 text-sm" id="load-stat-duration">-</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Total Req</p>
+                    <p class="font-bold text-slate-700 text-sm" id="load-stat-reqs">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infrastructure & Stats Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Infra Spec Card -->
+            <div class="lg:col-span-1">
+                <div id="infra-card-bg"
+                    class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl shadow-lg text-white h-full relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                        <i data-lucide="server" class="w-32 h-32"></i>
+                    </div>
+
+                    <h3 class="text-base font-bold mb-6 flex items-center gap-2 relative z-10">
+                        <i data-lucide="cpu" class="w-5 h-5 text-slate-400"></i> 인프라 스펙
+                    </h3>
+                    <div class="space-y-4 relative z-10">
+                        <div class="flex justify-between text-sm py-2 border-b border-white/10">
+                            <span class="text-slate-400">Instance Type</span>
+                            <span class="font-bold font-mono" id="infra-instance">t3.micro (1GB)</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-2 border-b border-white/10">
+                            <span class="text-slate-400">Auto Scaling</span>
+                            <span class="font-bold font-mono" id="infra-scaling">Min 1 / Max 2</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-2 border-b border-white/10">
+                            <span class="text-slate-400">Scale Trigger</span>
+                            <span class="font-bold text-amber-400">CPU 70% ▲</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-2">
+                            <span class="text-slate-400">Status</span>
+                            <span class="font-bold text-green-400 flex items-center gap-1">
+                                <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Healthy
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics Cards -->
+            <div class="lg:col-span-2 grid grid-cols-2 gap-4">
+                <!-- VUs -->
+                <div
+                    class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:border-blue-200 transition-colors">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="icon-bg-vus" class="p-2 rounded-xl bg-blue-100 text-blue-600">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Max VUs</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-gray-900" id="metric-vus">-</span>
+                        <span class="text-xs font-medium text-gray-400">users</span>
+                    </div>
+                </div>
+
+                <!-- Latency -->
+                <div
+                    class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:border-amber-200 transition-colors">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="icon-bg-latency" class="p-2 rounded-xl bg-amber-100 text-amber-600">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">P95 Latency</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-gray-900" id="metric-latency">-</span>
+                        <span class="text-xs font-medium text-gray-400" id="unit-latency">ms</span>
+                    </div>
+                </div>
+
+                <!-- Success Rate -->
+                <div
+                    class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:border-green-200 transition-colors">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-xl bg-green-100 text-green-600">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Success Rate</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-gray-900" id="metric-success">-</span>
+                        <span class="text-xs font-medium text-gray-400">%</span>
+                    </div>
+                </div>
+
+                <!-- Throughput -->
+                <div
+                    class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:border-purple-200 transition-colors">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-2 rounded-xl bg-purple-100 text-purple-600">
+                            <i data-lucide="trending-up" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">RPS (Avg)</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-gray-900" id="metric-rps">-</span>
+                        <span class="text-xs font-medium text-gray-400">req/s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold flex items-center gap-2 text-gray-900">
+                    <i data-lucide="bar-chart" class="w-5 h-5 text-gray-400"></i>
+                    <span id="chart-title">테스트 부하 및 응답시간 분포</span>
+                </h3>
+            </div>
+
+            <!-- ApexCharts Container -->
+            <div id="loadTestChart" class="w-full h-[350px]"></div>
+        </div>
+
+        <!-- Conclusion Section -->
+        <div id="conclusion-box"
+            class="p-8 rounded-[2rem] shadow-lg text-white relative overflow-hidden transition-colors duration-500 bg-slate-800">
+            <div
+                class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl mix-blend-overlay">
+            </div>
+            <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-black opacity-20 rounded-full blur-3xl">
+            </div>
+
+            <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-lg font-bold mb-3 flex items-center gap-2 text-white/90">
+                        <i data-lucide="clipboard-check" class="w-5 h-5"></i> 성능 요약
+                    </h4>
+                    <p class="text-sm leading-relaxed text-blue-50 font-medium opacity-90" id="conclusion-summary">
+                        <!-- Injected -->
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-3 flex items-center gap-2 text-white/90">
+                        <i data-lucide="microscope" class="w-5 h-5"></i> 기술적 분석
+                    </h4>
+                    <p class="text-sm leading-relaxed text-blue-50 font-medium opacity-90" id="conclusion-tech">
+                        <!-- Injected -->
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

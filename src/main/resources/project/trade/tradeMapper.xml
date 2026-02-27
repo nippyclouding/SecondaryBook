@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="project.trade.TradeMapper">
+
+    <select id="findBySeq" parameterType="long" resultType="project.trade.TradeVO">
+        SELECT
+            sb.member_seller_seq,
+            sb.member_buyer_seq,
+            sb.trade_seq,
+            sb.sale_title,
+            sb.book_st,
+            sb.sale_cont,
+            sb.sale_price,
+            sb.delivery_cost,
+            sb.sale_rg,
+            sb.sale_st,
+            sb.sale_st_dtm,
+            sb.views,
+            sb.wish_cnt,
+            sb.book_sale_dtm,
+            sb.post_no,
+            sb.addr_h,
+            sb.addr_d,
+            sb.recipient_ph,
+            sb.recipient_nm,
+            sb.crt_dtm,
+            sb.upd_dtm,
+            sb.payment_type,
+            sb.category_nm,
+            sb.book_title,
+            sb.book_author,
+            sb.book_publisher,
+            sb.book_org_price,
+            sb.book_img,
+            sb.isbn,
+            sb.safe_payment_st,
+            sb.safe_payment_expire_dtm,
+            sb.pending_buyer_seq,
+            sb.confirm_purchase,
+            sb.settlement_st
+        FROM sb_trade_info AS sb
+        WHERE sb.trade_seq = #{trade_seq}
+    </select>
+
+    <!-- 정산 신청 전용 조회 (FOR UPDATE: 동일 trade에 대한 동시 정산 신청 방지) -->
+    <select id="findBySeqForUpdate" parameterType="long" resultType="project.trade.TradeVO">
+        SELECT trade_seq, member_seller_seq, sale_price, delivery_cost,
+               safe_payment_st, confirm_purchase, settlement_st
+        FROM sb_trade_info
+        WHERE trade_seq = #{trade_seq}
+        FOR UPDATE
+    </select>
+
+    <select id="findImgUrl" parameterType="long" resultType="project.trade.TradeImageVO">
+        SELECT book_img_seq, trade_seq, img_url, sort_seq
+        FROM book_image
+        WHERE trade_seq = #{trade_seq}
+        ORDER BY sort_seq
+    </select>
+
+    <insert id="save" parameterType="project.trade.TradeVO" useGeneratedKeys="true" keyProperty="trade_seq">
+        INSERT INTO sb_trade_info (
+            member_seller_seq,
+            sale_title,
+            book_img,
+            book_title,
+            book_author,
+            book_publisher,
+            book_org_price,
+            isbn,
+            category_nm,
+            category_seq,
+            book_st,
+            payment_type,
+            sale_cont,
+            sale_price,
+            delivery_cost,
+            <if test="sale_rg != null and sale_rg != ''">
+                sale_rg ,
+            </if>
+            crt_dtm
+        ) VALUES (
+            #{member_seller_seq},
+            #{sale_title},
+            #{book_img},
+            #{book_title},
+            #{book_author},
+            #{book_publisher},
+            #{book_org_price},
+            #{isbn},
+            #{category_nm},
+            #{category_seq},
+            #{book_st},
+            #{payment_type},
+            #{sale_cont},
+            #{sale_price},
+            #{delivery_cost}
+            <if test="sale_rg != null and sale_rg != ''">
+                , #{sale_rg}
+            </if>
+            , now()
+        )
+    </insert>
+
+    <!-- pending_buyer_seq 조회 -->
+    <select id="findPendingBuyerSeq" resultType="Long">
+        SELECT pending_buyer_seq
+        FROM sb_trade_info
+        WHERE trade_seq = #{trade_seq}
+    </select>
+
+    <!-- 찜하기 추가 -->
+    <insert id="saveLike">
+        INSERT INTO trade_wish (
+            trade_seq,
+            member_seq,
+            crt_dtm
+            ) VALUES (
+            #{trade_seq},
+            #{member_seq},
+            now()
+        )
+    </insert>
+
+    <update id="update" parameterType="project.trade.TradeVO">
+        UPDATE sb_trade_info
+            SET
+                sale_title        = #{sale_title},
+                book_img          = #{book_img},
+                book_title        = #{book_title},
+                book_author       = #{book_author},
+                book_publisher    = #{book_publisher},
+                book_org_price    = #{book_org_price},
+                isbn              = #{isbn},
+                category_seq      = #{category_seq},
+                category_nm       = #{category_nm},
+                book_st           = #{book_st},
+                sale_cont         = #{sale_cont},
+                sale_price        = #{sale_price},
+                delivery_cost     = #{delivery_cost},
+                <choose>
+                    <when test="sale_rg != null and sale_rg != ''">
+                        sale_rg = #{sale_rg},
+                    </when>
+                    <otherwise>
+                        sale_rg = DEFAULT(sale_rg),
+                    </otherwise>
+                </choose>
+                upd_dtm           = now()
+                WHERE trade_seq   = #{trade_seq}
+    </update>
+
+    <update id="delete" parameterType="long">
+        UPDATE sb_trade_info
+        SET del_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+    </update>
+
+<!--    <select id="findAll" resultType="project.trade.TradeVO">-->
+<!--        SELECT-->
+<!--        trade_seq,-->
+<!--        book_title,-->
+<!--        book_author,-->
+<!--        book_publisher,-->
+<!--        book_img,-->
+<!--        sale_title,-->
+<!--        sale_price,-->
+<!--        sale_st,-->
+<!--        sale_rg,-->
+<!--        crt_dtm-->
+<!--        FROM sb_trade_info-->
+<!--        WHERE-->
+<!--            del_dtm IS NULL-->
+<!--            OR-->
+<!--            book_sale_dtm IS NULL-->
+<!--        ORDER BY crt_dtm DESC-->
+<!--    </select>-->
+<!--    &lt;!&ndash; 쿼리 최적화 기억하기 &ndash;&gt;-->
+
+    <!-- 페이징 처리 -->
+    <select id="findAllWithPaging" resultType="project.trade.TradeVO">
+        SELECT
+        ti.trade_seq,
+        ti.book_title,
+        ti.book_author,
+        ti.book_publisher,
+        ti.book_img,
+        ti.sale_title,
+        ti.sale_price,
+        ti.sale_st,
+        ti.sale_rg,
+        ti.crt_dtm,
+        COALESCE(tl.wish_count, 0) AS wish_count
+        FROM sb_trade_info ti
+        LEFT JOIN (
+        SELECT trade_seq, COUNT(*) AS wish_count
+        FROM trade_wish
+        GROUP BY trade_seq
+        ) tl ON ti.trade_seq = tl.trade_seq
+        WHERE ti.del_dtm IS NULL
+
+        <!-- 카테고리 -->
+        <if test="searchVO.category_seq != null and searchVO.category_seq != 0">
+            AND ti.category_seq = #{searchVO.category_seq}
+        </if>
+
+        <!-- 상태 -->
+        <if test="searchVO.book_st != null">
+            AND ti.book_st = #{searchVO.book_st}
+        </if>
+
+        <!-- 검색어 -->
+        <if test="searchVO.search_word != null and searchVO.search_word != ''">
+            AND (
+            ti.book_title LIKE CONCAT('%', #{searchVO.search_word}, '%')
+            OR ti.sale_title LIKE CONCAT('%', #{searchVO.search_word}, '%')
+            OR ti.book_author LIKE CONCAT('%', #{searchVO.search_word}, '%')
+            OR ti.book_publisher LIKE CONCAT('%', #{searchVO.search_word}, '%')
+            )
+        </if>
+
+        <!-- 판매 상태 -->
+        <if test="searchVO.sale_st != null">
+            AND ti.sale_st = #{searchVO.sale_st}
+        </if>
+
+        <!-- order 조건 -->
+        <choose>
+            <when test="searchVO.sort == 'priceAsc'">
+                ORDER BY ti.sale_price ASC
+            </when>
+            <when test="searchVO.sort == 'likeDesc'">
+                ORDER BY wish_count DESC
+            </when>
+            <otherwise>
+                ORDER BY ti.crt_dtm DESC
+            </otherwise>
+        </choose>
+
+        LIMIT #{size}
+        OFFSET #{offset}
+    </select>
+
+
+    <!-- 전체 개수 조회 (페이지 수 계산용) -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM sb_trade_info
+        WHERE
+            del_dtm IS NULL <!-- 삭제되지 않은 게시글 조회 -->
+        <!-- 검색조건추가 (카테고리, 상태, 검색어) -->
+        <if test="searchVO.category_seq != null and searchVO.category_seq != 0">
+            AND category_seq = #{searchVO.category_seq}
+        </if>
+        <if test="searchVO.book_st != null">
+            AND book_st = #{searchVO.book_st}
+        </if>
+        <if test="searchVO.search_word != null and searchVO.search_word != ''">
+            AND (
+                book_title LIKE CONCAT('%', #{searchVO.search_word}, '%')
+                OR sale_title LIKE CONCAT('%', #{searchVO.search_word}, '%')
+                OR book_author LIKE CONCAT('%', #{searchVO.search_word}, '%')
+                OR book_publisher LIKE CONCAT('%', #{searchVO.search_word}, '%')
+            )
+        </if>
+        <!-- 판매 상태 -->
+        <if test="searchVO.sale_st != null">
+            AND sale_st = #{searchVO.sale_st}
+        </if>
+    </select>
+
+    <select id="selectCategory" resultType="project.trade.TradeVO">
+        SELECT
+        category_nm,
+        category_seq
+        FROM category
+    </select>
+
+    <!-- 찜하기 조회 -->
+    <select id="countLike" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM trade_wish
+        WHERE trade_seq = #{trade_seq} AND member_seq = #{member_seq}
+    </select>
+
+    <!-- 찜하기 조회 전체갯수 -->
+    <select id="countLikeAll" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM trade_wish
+        WHERE trade_seq = #{trade_seq}
+    </select>
+    <select id="findByChatRoomSeq" resultType="project.trade.TradeVO">
+        SELECT
+            trade_seq,
+            member_seller_seq,
+            book_img,
+            book_title,
+            sale_price,
+            sale_title,
+            sale_st,
+            delivery_cost,
+            book_st,
+            member_seller_seq
+        FROM sb_trade_info
+        WHERE trade_seq = (
+            SELECT trade_seq
+            FROM chatroom
+            WHERE chat_room_seq = #{chat_room_seq}
+        )
+    </select>
+    <!-- 판매자 조회 -->
+    <select id="findSellerInfo" resultType="project.member.MemberVO">
+        SELECT
+            m.member_nicknm,
+            m.member_email,
+            m.member_tel_no
+        FROM sb_trade_info s
+        JOIN member_info m on s.member_seller_seq = m.member_seq
+        WHERE s.trade_seq = #{trade_seq}
+    </select>
+
+
+    <!--좋아요 삭제-->
+    <delete id="deleteLike" >
+        DELETE FROM trade_wish
+        WHERE trade_seq = #{trade_seq} AND member_seq = #{member_seq}
+    </delete>
+    <!-- 회원 탈퇴 시 삭제되는 trade, soft delete -->
+    <update id="deleteAll">
+        UPDATE sb_trade_info
+        SET del_dtm = now()
+        WHERE member_seller_seq = #{member_seq}
+    </update>
+
+    <!-- 마이페이지 찜조회용 -->
+    <select id="selectWishTrades" parameterType="long" resultType="project.trade.TradeVO">
+        SELECT
+        T.TRADE_SEQ,
+        T.SALE_TITLE,
+        T.SALE_PRICE,
+        T.SALE_ST,
+        T.BOOK_ST,
+        T.SALE_RG,
+        T.BOOK_IMG      FROM SB_TRADE_INFO T
+        JOIN TRADE_WISH W ON T.TRADE_SEQ = W.TRADE_SEQ
+        WHERE W.MEMBER_SEQ = #{member_seq}
+        ORDER BY W.CRT_DTM DESC
+    </select>
+
+    <select id="selectPurchaseTrades" resultType="project.trade.TradeVO">
+        SELECT T.TRADE_SEQ
+        , T.SALE_TITLE
+        , T.SALE_PRICE
+        , T.SALE_ST
+        , T.BOOK_ST
+        , T.SALE_RG
+        , T.SALE_ST_DTM
+        , T.BOOK_IMG
+        , T.CONFIRM_PURCHASE
+        , T.POST_NO
+        , T.ADDR_H
+        , T.ADDR_D
+        FROM SB_TRADE_INFO T
+        WHERE T.MEMBER_BUYER_SEQ = #{member_seq}
+        ORDER BY T.SALE_ST_DTM DESC
+    </select>
+
+    <select id="selectSaleTrades" resultType="project.trade.TradeVO">
+        SELECT T.TRADE_SEQ
+        , T.SALE_TITLE
+        , T.SALE_PRICE
+        , T.SALE_ST
+        , T.BOOK_ST
+        , T.SALE_RG
+        , T.SALE_ST_DTM
+        , T.CRT_DTM
+        , T.BOOK_IMG
+        , T.SAFE_PAYMENT_ST
+        , T.POST_NO
+        , T.ADDR_H
+        , T.ADDR_D
+        , T.SETTLEMENT_ST
+        , T.DELIVERY_COST
+        FROM SB_TRADE_INFO T
+        WHERE T.MEMBER_SELLER_SEQ = #{member_seq}
+        AND T.DEL_DTM IS NULL
+        <if test="status != null and status !='all'">
+            AND T.SALE_ST = #{status}
+        </if>
+        ORDER BY T.CRT_DTM DESC
+    </select>
+
+    <!-- 안전결제 상태 조회 (비관적 락) -->
+    <select id="findSafePaymentStatus" resultType="String">
+        SELECT COALESCE(safe_payment_st, 'NONE')
+        FROM sb_trade_info
+        WHERE trade_seq = #{trade_seq}
+        FOR UPDATE <!-- DB 입장에서는 조회가 아닌 쓰기-->
+    </select>
+
+    <!-- 안전결제 상태 업데이트 -->
+    <update id="updateSafePaymentStatus">
+        UPDATE sb_trade_info
+        SET safe_payment_st = #{status},
+            safe_payment_expire_dtm = NULL,
+            pending_buyer_seq = NULL,
+            upd_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+    </update>
+
+    <!-- 안전결제 상태 + 만료시간 업데이트 -->
+    <update id="updateSafePaymentWithExpire">
+        UPDATE sb_trade_info
+        SET safe_payment_st = #{status},
+            safe_payment_expire_dtm = DATE_ADD(NOW(), INTERVAL #{expire_minutes} MINUTE),
+            pending_buyer_seq = #{pending_buyer_seq},
+            upd_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+          AND safe_payment_st = 'NONE'
+    </update>
+
+    <!-- 만료된 안전결제 자동 초기화 -->
+    <update id="resetExpiredSafePayments">
+        UPDATE sb_trade_info
+        SET safe_payment_st = 'NONE',
+        safe_payment_expire_dtm = NULL,
+        pending_buyer_seq = NULL,
+        upd_dtm = now()
+        WHERE safe_payment_st = 'PENDING'
+        AND safe_payment_expire_dtm IS NOT NULL
+        AND safe_payment_expire_dtm &lt; now()
+    </update>
+
+    <update id="statusUpdate">
+        UPDATE sb_trade_info
+        SET SALE_ST = #{saleStatus}
+        WHERE trade_seq = #{trade_seq}
+    </update>
+
+    <!-- 안전결제 만료까지 남은 초 조회 -->
+    <select id="findSafePaymentExpireSeconds" resultType="Long">
+        SELECT
+        CASE
+        WHEN safe_payment_st = 'PENDING' AND safe_payment_expire_dtm IS NOT NULL
+        THEN GREATEST(0, CEIL(TIMESTAMPDIFF(SECOND, NOW(), safe_payment_expire_dtm)))
+        ELSE 0
+        END
+        FROM sb_trade_info
+        WHERE trade_seq = #{trade_seq}
+    </select>
+
+
+    <!-- 판매자 수동 sold 변경 (sale일 때만 가능, safe_payment_st가 NONE일 때만)
+  -->
+    <update id="updateToSoldManually">
+        UPDATE sb_trade_info
+        SET sale_st = 'SOLD',
+        sale_st_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+        AND member_seller_seq = #{member_seq}
+        AND sale_st = 'SALE'
+        AND (safe_payment_st IS NULL OR safe_payment_st = 'NONE')
+    </update>
+
+
+    <!-- 구매 확정 -->
+    <update id="confirmPurchase">
+        UPDATE sb_trade_info
+        SET confirm_purchase = true,
+            settlement_st = CASE
+                WHEN safe_payment_st = 'COMPLETED' THEN 'READY'
+                ELSE settlement_st
+            END
+        WHERE trade_seq = #{trade_seq}
+        AND member_buyer_seq = #{member_seq}
+        AND confirm_purchase = false
+    </update>
+
+    <!-- 15일 지난 미확정 건 자동 확정 (스케줄러용) -->
+    <update id="autoConfirmExpiredPurchases">
+        <![CDATA[
+            UPDATE sb_trade_info
+            SET confirm_purchase = true,
+                settlement_st = CASE
+                    WHEN safe_payment_st = 'COMPLETED' THEN 'READY'
+                    ELSE settlement_st
+                END
+            WHERE confirm_purchase = false
+            AND sale_st = 'SOLD'
+            AND sale_st_dtm < DATE_SUB(NOW(), INTERVAL 15 DAY)
+        ]]>
+    </update>
+    <update id="successPurchase">
+        UPDATE sb_trade_info
+        SET
+        sale_st = 'SOLD',
+        sale_st_dtm = now(),
+        book_sale_dtm = now(),
+        member_buyer_seq = #{member_buyer_seq},
+        confirm_purchase = false,
+        safe_payment_st = 'COMPLETED',
+        safe_payment_expire_dtm = NULL,
+        pending_buyer_seq = NULL,
+        upd_dtm = now(),
+        post_no = #{post_no},
+        addr_h = #{addr_h},
+        addr_d = #{addr_d}
+        WHERE trade_seq = #{trade_seq}
+          AND sale_st = 'SALE'
+          AND safe_payment_st = 'PENDING'
+    </update>
+
+    <!-- 구매자의 안전결제 구매 내역 조회 -->
+    <select id="findPurchasesByBuyer" resultType="project.trade.TradeVO">
+        SELECT *
+        FROM sb_trade_info
+        WHERE member_buyer_seq = #{member_seq}
+        AND confirm_purchase IS NOT NULL
+        ORDER BY sale_st_dtm DESC
+    </select>
+
+    <!-- 이미지 전체 조회 -->
+    <select id="findImgUrlByTradeSeqList" resultType="project.trade.TradeImageVO">
+        SELECT
+            trade_seq,
+            book_img_seq,
+            img_url,
+            sort_seq
+        FROM book_image
+        WHERE trade_seq IN
+        <foreach collection="tradeSeqList"
+                 item="seq"
+                 open="("
+                 separator=","
+                 close=")">
+            #{seq}
+        </foreach>
+    </select>
+
+    <!-- 결제창 진입시 유효성 체크 컬럼 selelct -->
+    <select id="getPaymentCheckInfo" resultType="project.payment.PaymentVO">
+        SELECT
+            COALESCE(t.safe_payment_st, 'NONE') AS safePaymentStatus,
+            t.pending_buyer_seq AS pendingBuyerSeq,
+            CASE
+            WHEN t.safe_payment_st = 'PENDING' AND t.safe_payment_expire_dtm IS NOT NULL
+            THEN GREATEST(0, CEIL(TIMESTAMPDIFF(SECOND, NOW(), t.safe_payment_expire_dtm)))
+            ELSE 0
+            END AS remainingSeconds
+        FROM sb_trade_info t
+        WHERE t.trade_seq = #{trade_seq}
+        FOR UPDATE
+    </select>
+    <select id="findAllImageUrlsByMember" resultType="java.lang.String">
+        SELECT bi.img_url
+        FROM book_image bi
+        JOIN sb_trade_info t ON bi.trade_seq = t.trade_seq
+        WHERE t.member_seller_seq = #{member_seq}
+        AND t.del_dtm is null
+    </select>
+
+    <!-- 안전결제 내역 조회 -->
+    <select id="safePayList" resultType="project.trade.TradeVO">
+        SELECT
+            trade_seq,
+            member_seller_seq,
+            member_buyer_seq,
+            (SELECT member_nicknm FROM member_info WHERE member_seq = sb_trade_info.member_seller_seq) AS member_seller_nm,
+            (SELECT member_nicknm FROM member_info WHERE member_seq = sb_trade_info.member_buyer_seq) AS member_buyer_nm,
+            sale_title,
+            sale_price,
+            delivery_cost,
+            book_title,
+            sale_st_dtm
+        FROM sb_trade_info
+        WHERE payment_type = 'tosspay' AND safe_payment_st = 'COMPLETED'
+        AND confirm_purchase = true
+    </select>
+
+</mapper>

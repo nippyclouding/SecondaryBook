@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.member.MemberMapper">
+
+    <!-- ID로만 조회 (비밀번호 검증은 Java BCrypt에서 처리) -->
+    <select id="findByLoginId" parameterType="string" resultType="project.member.MemberVO">
+        SELECT MEMBER_SEQ
+             , LOGIN_ID
+             , MEMBER_PWD
+             , MEMBER_EMAIL
+             , MEMBER_TEL_NO
+             , MEMBER_NICKNM
+             , MEMBER_DELETED_DTM
+             , MEMBER_LAST_LOGIN_DTM
+             , MEMBER_ST
+             , CRT_DTM
+             , UPD_DTM
+          FROM MEMBER_INFO
+         WHERE LOGIN_ID = #{login_id}
+           AND MEMBER_DELETED_DTM IS NULL
+           AND MEMBER_ST = 'JOIN'
+    </select>
+
+    <!-- MD5 fallback (기존 회원 마이그레이션용, 전환 완료 후 삭제) -->
+    <select id="loginByMd5" parameterType="project.member.MemberVO" resultType="project.member.MemberVO">
+        SELECT MEMBER_SEQ
+             , LOGIN_ID
+             , MEMBER_PWD
+             , MEMBER_EMAIL
+             , MEMBER_TEL_NO
+             , MEMBER_NICKNM
+             , MEMBER_DELETED_DTM
+             , MEMBER_LAST_LOGIN_DTM
+             , MEMBER_ST
+             , CRT_DTM
+             , UPD_DTM
+          FROM MEMBER_INFO
+         WHERE LOGIN_ID = #{login_id}
+           AND MEMBER_PWD = MD5(#{member_pwd})
+           AND MEMBER_DELETED_DTM IS NULL
+           AND MEMBER_ST = 'JOIN'
+    </select>
+
+    <update id="loginLogUpdate" parameterType="long">
+        UPDATE MEMBER_INFO
+           SET MEMBER_LAST_LOGIN_DTM = NOW()
+         WHERE MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <insert id="signUp" parameterType="project.member.MemberVO">
+        INSERT INTO MEMBER_INFO(
+                                 LOGIN_ID, MEMBER_PWD
+                               , MEMBER_EMAIL, MEMBER_TEL_NO, MEMBER_NICKNM
+                               , CRT_DTM
+        ) VALUES (
+                   #{login_id}, #{member_pwd}
+                 , #{member_email}, #{member_tel_no}, #{member_nicknm}
+                 , NOW()
+        )
+
+    </insert>
+
+    <select id="getMemberByOAuth" parameterType="map" resultType="project.member.MemberVO">
+        SELECT m.*
+        FROM MEMBER_INFO m
+                 JOIN MEMBER_OAUTH o ON m.MEMBER_SEQ = o.MEMBER_SEQ
+        WHERE o.PROVIDER = #{provider}
+          AND o.PROVIDER_ID = #{provider_id}
+    </select>
+
+    <insert id="insertSocialMemberInfo" parameterType="map" useGeneratedKeys="true" keyProperty="member_seq">
+        INSERT INTO MEMBER_INFO (
+            LOGIN_ID, MEMBER_EMAIL, MEMBER_PWD, MEMBER_NICKNM, CRT_DTM
+        ) VALUES (
+                     #{login_id}, #{email}, #{member_pwd}, #{nickname}, NOW()
+                 )
+    </insert>
+
+    <insert id="insertMemberOAuth" parameterType="map">
+        INSERT INTO MEMBER_OAUTH (
+            MEMBER_SEQ, PROVIDER, PROVIDER_ID, CONNECTED_DT
+        ) VALUES (
+                     #{member_seq}, #{provider}, #{provider_id}, NOW()
+                 )
+    </insert>
+
+    <select id="idCheck" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER_INFO
+         WHERE LOGIN_ID = #{login_id}
+    </select>
+
+    <select id="emailCheck" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER_INFO
+         WHERE MEMBER_EMAIL = #{member_email}
+    </select>
+
+    <select id="nickNmCheck" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER_INFO
+         WHERE MEMBER_NICKNM = #{member_nicknm}
+    </select>
+
+    <!-- 프로필 회원 정보 수정 || 삭제 -->
+    <update id="updateMember" parameterType="project.member.MemberVO">
+        UPDATE MEMBER_INFO
+           SET MEMBER_NICKNM = #{member_nicknm}
+             , MEMBER_TEL_NO = #{member_tel_no}
+             , UPD_DTM = NOW()
+         WHERE MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <update id="deleteMember" parameterType="long">
+        UPDATE MEMBER_INFO
+           SET
+            MEMBER_DELETED_DTM = NOW()
+          , MEMBER_NICKNM = '탈퇴한 회원'
+         WHERE MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <select id="findIdByTel" parameterType="string" resultType="string">
+        SELECT LOGIN_ID
+        FROM MEMBER_INFO
+        WHERE MEMBER_TEL_NO = #{member_tel_no}
+          AND MEMBER_DELETED_DTM IS NULL
+            LIMIT 1
+    </select>
+
+    <select id="checkUserByIdAndEmail" resultType="int">
+        SELECT COUNT(*)
+        FROM MEMBER_INFO
+        WHERE LOGIN_ID = #{login_id}
+          AND MEMBER_EMAIL = #{member_email}
+          AND MEMBER_DELETED_DTM IS NULL
+    </select>
+
+    <update id="updatePassword">
+        UPDATE MEMBER_INFO
+        SET MEMBER_PWD = #{member_pwd},
+            UPD_DTM = NOW()
+        WHERE LOGIN_ID = #{login_id}
+    </update>
+
+    <select id="findByMemberSeq" resultType="project.member.MemberVO">
+        SELECT MEMBER_SEQ
+             , MEMBER_EMAIL
+             , MEMBER_NICKNM
+          FROM MEMBER_INFO
+         WHERE MEMBER_SEQ = #{member_seq}
+    </select>
+</mapper>

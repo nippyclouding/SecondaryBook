@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans
+		xmlns:beans="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!--
+	    MVC 설정은 MvcConfig.java(@EnableWebMvc)에서 일원화하여 관리합니다.
+	    - @EnableWebMvc : RequestMappingHandlerMapping 등 MVC 인프라 빈 등록
+	    - addResourceHandlers() : 정적 리소스 경로 매핑 (/resources/**, /css/**, /js/**)
+	    - configureViewResolvers() : JSP ViewResolver
+	    이 파일에 mvc:annotation-driven을 중복 선언하면 동일한 MVC 인프라 빈이
+	    Root Context와 Servlet Context 양쪽에 등록되어 불필요한 중복 초기화가 발생합니다.
+	-->
+
+</beans:beans>

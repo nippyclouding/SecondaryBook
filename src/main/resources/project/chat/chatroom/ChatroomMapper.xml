@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.chat.chatroom.ChatroomMapper">
+
+    <insert id="save" parameterType="project.chat.chatroom.ChatroomVO" useGeneratedKeys="true" keyProperty="chat_room_seq">
+        INSERT INTO chatroom (
+        trade_seq,
+        crt_dtm,
+        member_buyer_seq,
+        member_seller_seq
+        ) VALUES (
+        #{trade_seq}, now(), #{member_buyer_seq}, #{member_seller_seq}
+        )
+    </insert>
+    <update id="updateLastMessage">
+        UPDATE chatroom
+        SET
+            last_msg = #{last_msg},
+            last_msg_dtm = now()
+        WHERE chat_room_seq = #{chat_room_seq}
+    </update>
+
+    <select id="findRoom" resultType="project.chat.chatroom.ChatroomVO">
+        SELECT
+            c.chat_room_seq,
+            c.trade_seq, c.crt_dtm,
+            c.member_seller_seq,
+            c.member_buyer_seq,
+            t.sale_title,
+            (SELECT member_nicknm FROM member_info WHERE c.member_seller_seq = member_seq) AS member_seller_nicknm,
+            (SELECT member_nicknm FROM member_info WHERE c.member_buyer_seq = member_seq) AS member_buyer_nicknm
+        FROM chatroom c
+        LEFT JOIN sb_trade_info t ON c.trade_seq = t.trade_seq
+        WHERE c.member_seller_seq=#{member_seller_seq} and c.member_buyer_seq=#{member_buyer_seq} and c.trade_seq=#{trade_seq}
+    </select>
+
+    <select id="findAllByMemberSeq" resultType="project.chat.chatroom.ChatroomVO">
+        SELECT c.*, t.sale_st, t.sale_title
+        FROM chatroom c
+        LEFT JOIN sb_trade_info t ON c.trade_seq = t.trade_seq
+        WHERE c.member_buyer_seq = #{member_seq}
+        OR c.member_seller_seq = #{member_seq}
+        ORDER BY c.crt_dtm DESC
+    </select>
+
+    <!-- 페이징 채팅방 목록 조회 (수정) -->
+    <select id="findAllByMemberSeqWithPaging"
+            resultType="project.chat.chatroom.ChatroomVO">
+        SELECT
+        c.*,
+        t.sale_st,
+        t.sale_title,
+        seller.member_nicknm AS member_seller_nicknm,
+        buyer.member_nicknm AS member_buyer_nicknm,
+        COALESCE(unread.unread_count, 0) > 0 AS msg_unread
+        FROM chatroom c
+        LEFT JOIN sb_trade_info t ON c.trade_seq = t.trade_seq
+        LEFT JOIN member_info seller ON c.member_seller_seq = seller.member_seq
+        LEFT JOIN member_info buyer ON c.member_buyer_seq = buyer.member_seq
+        LEFT JOIN (
+        SELECT chat_room_seq, COUNT(*) AS unread_count
+        FROM chat_msg
+        WHERE read_yn = false
+        AND sender_seq != #{member_seq}
+        GROUP BY chat_room_seq
+        ) unread ON c.chat_room_seq = unread.chat_room_seq
+        WHERE (c.member_seller_seq = #{member_seq}
+        OR c.member_buyer_seq = #{member_seq})
+        <if test="sale_st != null and sale_st != ''">
+            AND t.sale_st = #{sale_st}
+        </if>
+        ORDER BY c.crt_dtm DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+
+    <!-- 전체 개수 조회 (수정) -->
+    <select id="countByMemberSeq" resultType="int">
+        SELECT COUNT(*)
+        FROM chatroom c
+        <if test="sale_st != null and sale_st != ''">
+            LEFT JOIN sb_trade_info t ON c.trade_seq = t.trade_seq
+        </if>
+        WHERE (c.member_seller_seq = #{member_seq}
+        OR c.member_buyer_seq = #{member_seq})
+        <if test="sale_st != null and sale_st != ''">
+            AND t.sale_st = #{sale_st}
+        </if>
+    </select>
+
+
+    <!-- 허용되지 않은 접근자의 채팅방 접근 체크 -->
+    <select id="isMemberOfChatroom" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM chatroom
+        WHERE chat_room_seq = #{chat_room_seq}
+        AND (member_buyer_seq = #{member_seq}
+        OR member_seller_seq = #{member_seq})
+    </select>
+    <select id="findChatRoomSeqByTradeAndBuyer" parameterType="long" resultType="long">
+        SELECT chat_room_seq
+        FROM chatroom
+        WHERE
+            trade_seq = #{trade_seq}
+        and member_buyer_seq = #{buyer_seq}
+        LIMIT 1
+    </select>
+
+    <!-- 해당 trade의 구매자(채팅방 참여자)인지 확인 -->
+    <select id="isBuyerOfTrade" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM chatroom
+        WHERE trade_seq = #{trade_seq}
+          AND member_buyer_seq = #{member_seq}
+    </select>
+
+    <!-- 채팅방 seq로 채팅방 조회 -->
+    <select id="findByChatRoomSeq" resultType="project.chat.chatroom.ChatroomVO">
+        SELECT
+            c.*,
+            t.sale_title,
+            (SELECT member_nicknm FROM member_info WHERE c.member_seller_seq = member_seq) AS member_seller_nicknm,
+            (SELECT member_nicknm FROM member_info WHERE c.member_buyer_seq = member_seq) AS member_buyer_nicknm
+        FROM chatroom c
+        LEFT JOIN sb_trade_info t ON c.trade_seq = t.trade_seq
+        WHERE c.chat_room_seq = #{chat_room_seq}
+    </select>
+    <!--
+    <select id="findAllByChatRoomSeq" resultType="project.chat.message.MessageVO">
+        SELECT * FROM chat_msg WHERE chat_room_seq = #{chat_room_seq}
+        ORDER BY sent_dtm ASC
+    </select>
+    -->
+
+</mapper>

@@ -1,0 +1,745 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.admin.AdminMapper">
+
+    <select id="getAdminById" resultType="project.admin.AdminVO">
+        SELECT ADMIN_SEQ
+             , ADMIN_LOGIN_ID
+             , ADMIN_PASSWORD
+          FROM ADMIN
+         WHERE ADMIN_LOGIN_ID = #{id}
+    </select>
+
+    <select id="countAllMembers" resultType="int">
+        SELECT COUNT(*) FROM MEMBER_INFO WHERE MEMBER_DELETED_DTM IS NULL
+    </select>
+    <select id="countAllTrades" resultType="int">
+        SELECT COUNT(*) FROM SB_TRADE_INFO WHERE DEL_DTM IS NULL
+    </select>
+    <select id="countAllBookClubs" resultType="int">
+        SELECT COUNT(*) FROM BOOK_CLUB WHERE BOOK_CLUB_DELETED_DT IS NULL
+    </select>
+
+    <select id="searchMembers" parameterType="project.util.paging.SearchVO" resultType="project.member.MemberVO">
+        SELECT * FROM MEMBER_INFO
+        WHERE MEMBER_DELETED_DTM IS NULL
+        <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
+            AND MEMBER_ST = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'email'">
+                    AND MEMBER_EMAIL LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%') OR MEMBER_EMAIL LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY CRT_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAllMembersBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM MEMBER_INFO
+         WHERE MEMBER_DELETED_DTM IS NULL
+        <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
+            AND MEMBER_ST = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'email'">
+                    AND MEMBER_EMAIL LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%') OR MEMBER_EMAIL LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <select id="searchTrades" parameterType="project.util.paging.SearchVO" resultType="project.trade.TradeVO">
+        SELECT TRADE_SEQ
+             , SALE_TITLE
+             , SALE_PRICE
+             , SALE_RG
+             , SALE_ST
+             , BOOK_TITLE
+             , CRT_DTM
+          FROM SB_TRADE_INFO
+         WHERE DEL_DTM IS NULL
+        <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
+            AND SALE_ST = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'sale_title'">
+                    AND SALE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'bookName'">
+                    AND BOOK_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'region'">
+                    AND SALE_RG LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (SALE_TITLE LIKE CONCAT('%', #{keyword}, '%') OR BOOK_TITLE LIKE CONCAT('%', #{keyword}, '%') OR SALE_RG LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY CRT_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAllTradesBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM SB_TRADE_INFO
+         WHERE DEL_DTM IS NULL
+        <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
+            AND SALE_ST = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'sale_title'">
+                    AND SALE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'bookName'">
+                    AND BOOK_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'region'">
+                    AND SALE_RG LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                AND (SALE_TITLE LIKE CONCAT('%', #{keyword}, '%') OR BOOK_TITLE LIKE CONCAT('%', #{keyword}, '%') OR SALE_RG LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <select id="searchBookClubs" resultType="project.bookclub.vo.BookClubVO">
+        SELECT BOOK_CLUB_SEQ
+             , BOOK_CLUB_NAME
+             , BOOK_CLUB_RG
+             , BOOK_CLUB_MAX_MEMBER
+             , BOOK_CLUB_SCHEDULE
+             , CRT_DTM
+          FROM BOOK_CLUB
+         WHERE BOOK_CLUB_DELETED_DT IS NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'groupName'">
+                    AND BOOK_CLUB_NAME LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'region'">
+                    AND BOOK_CLUB_RG LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (BOOK_CLUB_NAME LIKE CONCAT('%', #{keyword}, '%') OR BOOK_CLUB_RG LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY CRT_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAllGroupsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM BOOK_CLUB
+         WHERE BOOK_CLUB_DELETED_DT IS NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'groupName'">
+                    AND BOOK_CLUB_NAME LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'region'">
+                    AND BOOK_CLUB_RG LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (BOOK_CLUB_NAME LIKE CONCAT('%', #{keyword}, '%') OR BOOK_CLUB_RG LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <select id="searchAdminLoginLogs" parameterType="project.util.paging.SearchVO" resultType="project.admin.LoginInfoVO">
+        SELECT L.LOGIN_INFO_SEQ
+             , L.ADMIN_SEQ
+             , L.LOGIN_DTM
+             , L.LOGIN_IP
+             , L.LOGOUT_DTM
+             , L.LOGOUT_IP
+             , A.ADMIN_LOGIN_ID
+          FROM LOGIN_INFO L
+         INNER JOIN ADMIN A
+            ON L.ADMIN_SEQ = A.ADMIN_SEQ
+         WHERE L.ADMIN_SEQ IS NOT NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND A.ADMIN_LOGIN_ID LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'ip'">
+                    AND L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'accessTime'">
+                    AND CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (A.ADMIN_LOGIN_ID LIKE CONCAT('%', #{keyword}, '%') OR L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%') OR CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY L.LOGIN_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAdminLoginLogsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM LOGIN_INFO L
+         INNER JOIN ADMIN A
+            ON L.ADMIN_SEQ = A.ADMIN_SEQ
+         WHERE L.ADMIN_SEQ IS NOT NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND A.ADMIN_LOGIN_ID LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'ip'">
+                    AND L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'accessTime'">
+                    AND CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (A.ADMIN_LOGIN_ID LIKE CONCAT('%', #{keyword}, '%') OR L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%') OR CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+
+    <select id="searchUsersLoginLogs" parameterType="project.util.paging.SearchVO" resultType="project.admin.LoginInfoVO">
+        SELECT L.LOGIN_INFO_SEQ
+             , L.MEMBER_SEQ
+             , L.LOGIN_DTM
+             , L.LOGIN_IP
+             , L.LOGOUT_DTM
+             , L.LOGOUT_IP
+             , M.MEMBER_NICKNM
+        FROM LOGIN_INFO L
+        INNER JOIN MEMBER_INFO M
+        ON L.MEMBER_SEQ = M.MEMBER_SEQ
+        WHERE L.MEMBER_SEQ IS NOT NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND M.MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'ip'">
+                    AND L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'accessTime'">
+                    AND CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (M.MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%') OR L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%') OR CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY L.LOGIN_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countUsersLoginLogsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM LOGIN_INFO L
+         INNER JOIN MEMBER_INFO M
+            ON L.MEMBER_SEQ = M.MEMBER_SEQ
+         WHERE L.MEMBER_SEQ IS NOT NULL
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'nickname'">
+                    AND M.MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'ip'">
+                    AND L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'accessTime'">
+                    AND CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (M.MEMBER_NICKNM LIKE CONCAT('%', #{keyword}, '%') OR L.LOGIN_IP LIKE CONCAT('%', #{keyword}, '%') OR CAST(L.LOGIN_DTM AS CHAR) LIKE CONCAT('%', #{keyword}, '%'))
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="searchNotices" parameterType="project.util.paging.SearchVO" resultType="project.admin.NoticeVO">
+        SELECT N.NOTICE_SEQ
+             , N.NOTICE_TITLE
+             , N.NOTICE_PRIORITY
+             , N.ACTIVE
+             , N.VIEW_COUNT
+             , N.CRT_DTM
+             , A.ADMIN_LOGIN_ID
+          FROM NOTICE N
+          LEFT JOIN ADMIN A
+            ON N.ADMIN_SEQ = A.ADMIN_SEQ
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND N.NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'content'">
+                        AND N.NOTICE_CONT LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        AND (N.NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                         OR N.NOTICE_CONT LIKE CONCAT('%', #{keyword}, '%'))
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+        ORDER BY N.NOTICE_PRIORITY DESC, N.CRT_DTM DESC
+         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAllNoticesBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
+        SELECT COUNT(*)
+          FROM notice
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'title'">
+                        AND NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'content'">
+                        AND NOTICE_CONT LIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        AND (NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+                         OR NOTICE_CONT LIKE CONCAT('%', #{keyword}, '%'))
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <update id="updateMemberStatus">
+        UPDATE MEMBER_INFO SET MEMBER_ST = #{status} WHERE MEMBER_SEQ = #{seq}
+    </update>
+    <update id="deleteMember">
+        UPDATE MEMBER_INFO SET MEMBER_DELETED_DTM = NOW() WHERE MEMBER_SEQ = #{seq}
+    </update>
+
+    <update id="updateTradeStatus">
+        UPDATE SB_TRADE_INFO SET SALE_ST = #{status} WHERE TRADE_SEQ = #{seq}
+    </update>
+    <update id="deleteTrade">
+        UPDATE SB_TRADE_INFO SET DEL_DTM = NOW() WHERE TRADE_SEQ = #{seq}
+    </update>
+
+    <update id="deleteBookClub">
+        UPDATE BOOK_CLUB SET BOOK_CLUB_DELETED_DT = CURRENT_DATE WHERE BOOK_CLUB_SEQ = #{seq}
+    </update>
+
+    <select id="selectDailySignupStats" resultType="map">
+        SELECT DATE_FORMAT(crt_dtm, '%Y-%m-%d') as date, COUNT(*) as count
+        FROM MEMBER_INFO
+        WHERE crt_dtm >= DATE_SUB(CURRENT_DATE, INTERVAL 6 DAY)
+        GROUP BY DATE_FORMAT(crt_dtm, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <select id="selectDailyTradeStats" resultType="map">
+        SELECT DATE_FORMAT(crt_dtm, '%Y-%m-%d') as date, COUNT(*) as count
+        FROM SB_TRADE_INFO
+        WHERE crt_dtm >= DATE_SUB(CURRENT_DATE, INTERVAL 6 DAY)
+        GROUP BY DATE_FORMAT(crt_dtm, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <select id="selectCategoryStats" resultType="map">
+        SELECT c.category_nm as name, COUNT(t.trade_seq) as count
+        FROM category c
+        JOIN sb_trade_info t ON c.category_seq = t.category_seq
+        WHERE t.del_dtm IS NULL
+        GROUP BY c.category_nm
+        ORDER BY count DESC
+        LIMIT 5
+    </select>
+
+    <select id="selectRecentMembers" resultType="project.member.MemberVO">
+        SELECT * FROM MEMBER_INFO
+        WHERE MEMBER_DELETED_DTM IS NULL
+        ORDER BY CRT_DTM DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectRecentTrades" resultType="project.trade.TradeVO">
+        SELECT trade_seq, sale_title, sale_price, sale_rg, sale_st, book_title, crt_dtm
+        FROM SB_TRADE_INFO
+        WHERE DEL_DTM IS NULL
+        ORDER BY CRT_DTM DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectRecentBookClubs" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+        BOOK_CLUB_SEQ,
+        BOOK_CLUB_NAME,
+        BOOK_CLUB_RG,
+        BOOK_CLUB_MAX_MEMBER,
+        BOOK_CLUB_SCHEDULE,
+        CRT_DTM
+        FROM BOOK_CLUB
+        WHERE BOOK_CLUB_DELETED_DT IS NULL
+        ORDER BY CRT_DTM DESC
+        LIMIT 10
+    </select>
+
+    <!--회원 로그인 기록 조회 -->
+    <select id="selectMemberLoginLogs" resultType="project.admin.LoginInfoVO">
+        SELECT L.LOGIN_INFO_SEQ
+        , L.MEMBER_SEQ
+        , L.LOGIN_DTM
+        , L.LOGIN_IP
+        , L.LOGOUT_DTM
+        , L.LOGOUT_IP
+        , M.MEMBER_NICKNM
+        , M.MEMBER_EMAIL
+        FROM LOGIN_INFO L
+        INNER JOIN MEMBER_INFO M
+        ON L.MEMBER_SEQ = M.MEMBER_SEQ
+        WHERE L.MEMBER_SEQ IS NOT NULL
+        ORDER BY L.LOGIN_DTM DESC
+        LIMIT 100
+    </select>
+
+    <!-- 관리자 로그인 기록 조회 -->
+    <select id="selectAdminLoginLogs" resultType="project.admin.LoginInfoVO">
+        SELECT L.LOGIN_INFO_SEQ
+        , L.ADMIN_SEQ
+        , L.LOGIN_DTM
+        , L.LOGIN_IP
+        , L.LOGOUT_DTM
+        , L.LOGOUT_IP
+        , A.ADMIN_LOGIN_ID
+        FROM LOGIN_INFO L
+        INNER JOIN ADMIN A
+        ON L.ADMIN_SEQ = A.ADMIN_SEQ
+        WHERE L.ADMIN_SEQ IS NOT NULL
+        ORDER BY L.LOGIN_DTM DESC
+        LIMIT 100
+    </select>
+
+    <!-- 관리자 로그인 기록 저장 -->
+    <insert id="insertAdminLogin">
+        INSERT INTO LOGIN_INFO (ADMIN_SEQ, LOGIN_DTM, LOGIN_IP)
+        VALUES (#{admin_seq}, CURRENT_TIMESTAMP, #{login_ip})
+    </insert>
+
+    <!-- 관리자 로그아웃 기록 -->
+    <update id="updateAdminLogout">
+        UPDATE LOGIN_INFO
+        SET LOGOUT_DTM = CURRENT_TIMESTAMP
+        , LOGOUT_IP = #{logout_ip}
+        WHERE LOGIN_INFO_SEQ = (
+        SELECT LOGIN_INFO_SEQ
+        FROM LOGIN_INFO
+        WHERE ADMIN_SEQ = #{admin_seq}
+        AND LOGOUT_DTM IS NULL
+        ORDER BY LOGIN_DTM DESC
+        LIMIT 1
+        )
+    </update>
+
+    <insert id="insertMemberLogin">
+        INSERT INTO LOGIN_INFO (MEMBER_SEQ, LOGIN_DTM, LOGIN_IP)
+        VALUES (#{member_seq}, CURRENT_TIMESTAMP, #{login_ip})
+    </insert>
+
+    <update id="updateMemberLogout">
+        UPDATE LOGIN_INFO
+        SET LOGOUT_DTM = CURRENT_TIMESTAMP
+        , LOGOUT_IP = #{logout_ip}
+        WHERE LOGIN_INFO_SEQ = (
+        SELECT LOGIN_INFO_SEQ
+        FROM LOGIN_INFO
+        WHERE MEMBER_SEQ = #{member_seq}
+        AND LOGOUT_DTM IS NULL
+        ORDER BY LOGIN_DTM DESC
+        LIMIT 1
+        )
+    </update>
+
+    <resultMap id="BannerMap" type="project.admin.BannerVO">
+        <id property="bannerSeq" column="BANNER_SEQ"/>
+        <result property="title" column="TITLE"/>
+        <result property="subtitle" column="SUBTITLE"/>
+        <result property="bgColorFrom" column="BG_COLOR_FROM"/>
+        <result property="bgColorTo" column="BG_COLOR_TO"/>
+        <result property="btnText" column="BTN_TEXT"/>
+        <result property="btnLink" column="BTN_LINK"/>
+        <result property="iconName" column="ICON_NAME"/>
+        <result property="orderIdx" column="ORDER_IDX"/>
+        <result property="isActive" column="IS_ACTIVE"/>
+        <result property="crtDtm" column="CRT_DTM"/>
+    </resultMap>
+
+    <resultMap id="TempPageMap" type="project.admin.TempPageVO">
+        <id property="pageSeq" column="PAGE_SEQ"/>
+        <result property="title" column="TITLE"/>
+        <result property="content" column="CONTENT"/>
+        <result property="crtDtm" column="CRT_DTM"/>
+    </resultMap>
+
+    <select id="selectBanners" resultMap="BannerMap">
+        SELECT * FROM BANNER WHERE IS_ACTIVE = TRUE ORDER BY ORDER_IDX ASC
+    </select>
+
+    <insert id="insertBanner">
+        INSERT INTO BANNER (TITLE, SUBTITLE, BG_COLOR_FROM, BG_COLOR_TO, BTN_TEXT, BTN_LINK, ICON_NAME, ORDER_IDX)
+        VALUES (#{title}, #{subtitle}, #{bgColorFrom}, #{bgColorTo}, #{btnText}, #{btnLink}, #{iconName},
+                (SELECT COALESCE(MAX(ORDER_IDX), 0) + 1 FROM BANNER))
+    </insert>
+
+    <delete id="deleteBanner">
+        DELETE FROM BANNER WHERE BANNER_SEQ = #{bannerSeq}
+    </delete>
+
+    <insert id="insertTempPage" useGeneratedKeys="true" keyProperty="pageSeq">
+        INSERT INTO TEMP_PAGE (TITLE, CONTENT)
+        VALUES (#{title}, #{content})
+    </insert>
+
+    <select id="selectTempPage" resultMap="TempPageMap">
+        SELECT * FROM TEMP_PAGE WHERE PAGE_SEQ = #{pageSeq}
+    </select>
+
+    <insert id="insertNotice">
+        INSERT INTO NOTICE (
+               ADMIN_SEQ
+             , NOTICE_TITLE
+             , NOTICE_PRIORITY
+             , ACTIVE
+             , NOTICE_CONT
+             , CRT_DTM
+        ) VALUES (
+               #{admin_seq}
+             , #{notice_title}
+             , #{notice_priority}
+             , #{active}
+             , #{notice_cont}
+             , CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <select id="selectNotices" resultType="project.admin.NoticeVO">
+        SELECT N.NOTICE_SEQ
+             , N.ADMIN_SEQ
+             , N.NOTICE_TITLE
+             , N.NOTICE_PRIORITY
+             , N.ACTIVE
+             , N.VIEW_COUNT
+             , N.NOTICE_CONT
+             , N.CRT_DTM
+             , A.ADMIN_LOGIN_ID
+          FROM NOTICE N
+          LEFT JOIN ADMIN A
+            ON N.ADMIN_SEQ = A.ADMIN_SEQ
+         ORDER BY N.NOTICE_PRIORITY DESC, N.CRT_DTM DESC
+         LIMIT 50
+    </select>
+
+    <select id="selectNotice" resultType="project.admin.NoticeVO">
+        SELECT N.NOTICE_SEQ
+             , N.ADMIN_SEQ
+             , N.NOTICE_TITLE
+             , N.NOTICE_PRIORITY
+             , N.ACTIVE
+             , N.VIEW_COUNT
+             , N.NOTICE_CONT
+             , N.CRT_DTM
+             , A.ADMIN_LOGIN_ID
+          FROM NOTICE N
+          LEFT JOIN ADMIN A
+            ON N.ADMIN_SEQ = A.ADMIN_SEQ
+         WHERE N.NOTICE_SEQ = #{notice_seq}
+    </select>
+
+    <select id="selectActiveNotices" resultType="project.admin.NoticeVO">
+        SELECT NOTICE_SEQ
+             , NOTICE_TITLE
+             , NOTICE_CONT
+             , CRT_DTM
+             , ACTIVE
+             , NOTICE_PRIORITY
+             , VIEW_COUNT
+          FROM NOTICE
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND ACTIVE = (#{status} = 'true')</if>
+        <if test="keyword != null and keyword != ''">
+            AND NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY NOTICE_PRIORITY DESC, CRT_DTM DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countActiveNotices" resultType="int">
+        SELECT COUNT(*)
+          FROM NOTICE
+          WHERE ACTIVE = TRUE
+        <if test="keyword != null and keyword != ''">
+            AND NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <!--안전결제 리스트 검색 조건 시-->
+    <select id="searchSafePayList" resultType="project.trade.TradeVO">
+        SELECT
+            trade_seq,
+            member_seller_seq,
+            member_buyer_seq,
+            (SELECT member_nicknm FROM member_info WHERE member_seq = sb_trade_info.member_seller_seq) AS member_seller_nm,
+            (SELECT member_nicknm FROM member_info WHERE member_seq = sb_trade_info.member_buyer_seq) AS member_buyer_nm,
+            sale_title,
+            sale_price,
+            delivery_cost,
+            book_title,
+            sale_st_dtm
+        FROM sb_trade_info
+        WHERE payment_type = 'tosspay'
+        AND safe_payment_st = 'COMPLETED'
+        AND confirm_purchase = true
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'all'">
+                    AND (
+                    sale_title LIKE CONCAT('%', #{keyword}, '%')
+                    OR book_title LIKE CONCAT('%', #{keyword}, '%')
+                    OR member_seller_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                    OR member_buyer_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                    )
+                </when>
+                <!-- 제목 -->
+                <when test="searchType == 'sale_title'">
+                    AND sale_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 상품명 -->
+                <when test="searchType == 'bookName'">
+                    AND book_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 판매자 -->
+                <when test="searchType == 'member_seller'">
+                    AND member_seller_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </when>
+                <!-- 구매자 -->
+                <when test="searchType == 'member_buyer'">
+                    AND member_buyer_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </when>
+            </choose>
+        </if>
+        ORDER BY sale_st_dtm DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAllSafePayListBySearch" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM sb_trade_info
+        WHERE payment_type = 'tosspay'
+        AND safe_payment_st = 'COMPLETED'
+        AND confirm_purchase = true
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'all'">
+                    AND (
+                    sale_title LIKE CONCAT('%', #{keyword}, '%')
+                    OR book_title LIKE CONCAT('%', #{keyword}, '%')
+                    OR member_seller_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                    OR member_buyer_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                    )
+                </when>
+                <!-- 제목 -->
+                <when test="searchType == 'sale_title'">
+                    AND sale_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 상품명 -->
+                <when test="searchType == 'bookName'">
+                    AND book_title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 판매자 -->
+                <when test="searchType == 'member_seller'">
+                    AND member_seller_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </when>
+                <!-- 구매자 -->
+                <when test="searchType == 'member_buyer'">
+                    AND member_buyer_seq IN (
+                    SELECT member_seq
+                    FROM member_info
+                    WHERE member_nicknm LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </when>
+            </choose>
+        </if>
+    </select>
+
+
+    <update id="increaseViewCount">
+        UPDATE NOTICE
+           SET VIEW_COUNT = VIEW_COUNT + 1
+         WHERE NOTICE_SEQ = #{notice_seq}
+    </update>
+
+    <delete id="deleteNotice">
+        DELETE FROM NOTICE
+         WHERE NOTICE_SEQ = #{notice_seq}
+    </delete>
+
+    <update id="updateNotice" parameterType="project.admin.NoticeVO">
+        UPDATE NOTICE
+           SET NOTICE_TITLE = #{notice_title}
+             , NOTICE_CONT = #{notice_cont}
+             , NOTICE_PRIORITY = #{notice_priority}
+             , ACTIVE = #{active}
+             , UPD_DTM = NOW()
+         WHERE NOTICE_SEQ = #{notice_seq}
+    </update>
+</mapper>

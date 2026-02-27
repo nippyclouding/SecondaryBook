@@ -1,0 +1,888 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.bookclub.BookClubMapper">
+
+    <!-- ===================================== -->
+    <!-- 독서모임 검색 및 조회 -->
+    <!-- ===================================== -->
+
+    <!-- 독서모임 전체 조회 (정렬 + 페이징) -->
+    <select id="searchAllWithSort" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+            bc.book_club_seq,
+            bc.book_club_leader_seq,
+            bc.book_club_name,
+            bc.book_club_desc,
+            bc.book_club_rg,
+            bc.book_club_max_member,
+            bc.book_club_deleted_dt,
+            bc.banner_img_url,
+            bc.book_club_schedule,
+            bc.crt_dtm,
+            bc.upd_dtm,
+
+            (SELECT COUNT(*)
+             FROM book_club_member
+             WHERE book_club_seq = bc.book_club_seq
+               AND join_st = 'JOINED'
+            ) AS joined_member_count,
+
+            (SELECT MAX(crt_dtm)
+             FROM book_club_board
+             WHERE book_club_seq = bc.book_club_seq
+               AND board_deleted_dtm IS NULL
+            ) AS last_activity_dtm,
+
+            (SELECT COUNT(*)
+             FROM book_club_wish
+             WHERE book_club_seq = bc.book_club_seq
+            ) AS wish_count,
+
+            <choose>
+                <when test="memberSeq != null">
+                    (SELECT CASE WHEN EXISTS (
+                        SELECT 1 FROM book_club_wish
+                        WHERE book_club_seq = bc.book_club_seq AND member_seq = #{memberSeq}
+                    ) THEN true ELSE false END) AS wished
+                </when>
+                <otherwise>
+                    false AS wished
+                </otherwise>
+            </choose>
+
+        FROM book_club bc
+
+        WHERE bc.book_club_deleted_dt IS NULL
+
+        <choose>
+            <when test="sort == 'activity'">
+                ORDER BY last_activity_dtm IS NULL, last_activity_dtm DESC, bc.crt_dtm DESC
+            </when>
+            <otherwise>
+                ORDER BY bc.crt_dtm DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 독서모임 키워드 조회 (정렬 + 페이징) -->
+    <select id="searchByKeywordWithSort" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+            bc.book_club_seq,
+            bc.book_club_leader_seq,
+            bc.book_club_name,
+            bc.book_club_desc,
+            bc.book_club_rg,
+            bc.book_club_max_member,
+            bc.book_club_deleted_dt,
+            bc.banner_img_url,
+            bc.book_club_schedule,
+            bc.crt_dtm,
+            bc.upd_dtm,
+
+            (SELECT COUNT(*)
+             FROM book_club_member
+             WHERE book_club_seq = bc.book_club_seq
+               AND join_st = 'JOINED'
+            ) AS joined_member_count,
+
+            (SELECT MAX(crt_dtm)
+             FROM book_club_board
+             WHERE book_club_seq = bc.book_club_seq
+               AND board_deleted_dtm IS NULL
+            ) AS last_activity_dtm,
+
+            (SELECT COUNT(*)
+             FROM book_club_wish
+             WHERE book_club_seq = bc.book_club_seq
+            ) AS wish_count,
+
+            <choose>
+                <when test="memberSeq != null">
+                    (SELECT CASE WHEN EXISTS (
+                        SELECT 1 FROM book_club_wish
+                        WHERE book_club_seq = bc.book_club_seq AND member_seq = #{memberSeq}
+                    ) THEN true ELSE false END) AS wished
+                </when>
+                <otherwise>
+                    false AS wished
+                </otherwise>
+            </choose>
+
+        FROM book_club bc
+
+        WHERE bc.book_club_deleted_dt IS NULL
+        AND
+        <foreach collection="tokens" item="token" separator="AND">
+            (
+            bc.book_club_name LIKE CONCAT('%', #{token}, '%')
+            OR bc.book_club_rg LIKE CONCAT('%', #{token}, '%')
+            )
+        </foreach>
+
+        <choose>
+            <when test="sort == 'activity'">
+                ORDER BY last_activity_dtm IS NULL, last_activity_dtm DESC, bc.crt_dtm DESC
+            </when>
+            <otherwise>
+                ORDER BY bc.crt_dtm DESC
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 전체 모임 개수 조회 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM book_club
+        WHERE book_club_deleted_dt IS NULL
+    </select>
+
+    <!-- 키워드 검색 모임 개수 조회 -->
+    <select id="countByKeyword" resultType="long">
+        SELECT COUNT(*)
+        FROM book_club
+        WHERE book_club_deleted_dt IS NULL
+        AND
+        <foreach collection="tokens" item="token" separator="AND">
+            (
+                book_club_name LIKE CONCAT('%', #{token}, '%')
+                OR
+                book_club_rg LIKE CONCAT('%', #{token}, '%')
+            )
+        </foreach>
+    </select>
+
+    <!-- 독서모임 1건 조회 (상세 페이지용) -->
+    <select id="selectById" parameterType="long" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+            book_club_seq,
+            book_club_name,
+            book_club_desc,
+            book_club_rg,
+            book_club_max_member,
+            book_club_deleted_dt,
+            banner_img_url,
+            book_club_schedule,
+            crt_dtm,
+            upd_dtm,
+            book_club_leader_seq
+        FROM book_club
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 독서모임 생성 및 중복 체크 -->
+    <!-- ===================================== -->
+
+    <!-- 독서모임 생성 -->
+    <insert id="insertBookClub" parameterType="project.bookclub.vo.BookClubVO" useGeneratedKeys="true" keyProperty="book_club_seq">
+        INSERT INTO book_club (
+            book_club_leader_seq,
+            book_club_name,
+            book_club_desc,
+            book_club_rg,
+            book_club_max_member,
+            banner_img_url,
+            book_club_schedule,
+            crt_dtm
+        ) VALUES (
+            #{book_club_leader_seq},
+            #{book_club_name},
+            #{book_club_desc},
+            #{book_club_rg},
+            #{book_club_max_member},
+            #{banner_img_url},
+            #{book_club_schedule},
+            now()
+        )
+    </insert>
+
+    <!-- 모임명 중복 체크 -->
+    <select id="countByName" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club
+        WHERE book_club_name = #{book_club_name}
+        AND book_club_deleted_dt IS NULL
+    </select>
+
+    <!-- 리더별 모임명 중복 체크 -->
+    <select id="countByLeaderAndName" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club
+        WHERE book_club_leader_seq = #{leaderSeq}
+        AND book_club_name = #{name}
+        AND book_club_deleted_dt IS NULL
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 멤버십 관련 -->
+    <!-- ===================================== -->
+
+    <!-- 특정 멤버가 JOINED 상태로 가입되어 있는지 확인 -->
+    <select id="selectJoinedMemberCount" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_member
+            WHERE book_club_seq = #{bookClubSeq}
+            AND member_seq = #{memberSeq}
+            AND join_st = 'JOINED'
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 독서모임의 전체 JOINED 멤버 수 조회 -->
+    <select id="getTotalJoinedMemberCount" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club_member
+        WHERE book_club_seq = #{bookClubSeq}
+        AND join_st = 'JOINED'
+    </select>
+
+    <!-- 특정 멤버의 대기중인 가입 신청 확인 (request_st='WAIT') -->
+    <select id="selectPendingRequestCount" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_request
+            WHERE book_club_seq = #{bookClubSeq}
+            AND request_member_seq = #{memberSeq}
+            AND request_st = 'WAIT'
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 특정 멤버의 최근 거절된 신청 확인 (request_st='REJECTED') -->
+    <select id="selectRejectedRequestCount" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_request
+            WHERE book_club_seq = #{bookClubSeq}
+            AND request_member_seq = #{memberSeq}
+            AND request_st = 'REJECTED'
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 가입 신청 INSERT -->
+    <insert id="insertJoinRequest">
+        INSERT INTO book_club_request (
+            book_club_seq,
+            request_member_seq,
+            request_st,
+            request_dtm,
+            request_cont
+        ) VALUES (
+            #{bookClubSeq},
+            #{memberSeq},
+            'WAIT',
+            CURRENT_TIMESTAMP,
+            #{requestCont}
+        )
+    </insert>
+
+    <!-- 모임장을 book_club_member에 자동 등록 (모임 생성 시 사용) -->
+    <insert id="insertLeaderMember">
+        INSERT INTO book_club_member (
+            book_club_seq,
+            member_seq,
+            leader_yn,
+            join_st,
+            join_st_update_dtm
+        ) VALUES (
+            #{bookClubSeq},
+            #{memberSeq},
+            true,
+            'JOINED',
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <!-- ===================================== -->
+    <!-- 찜 관련 -->
+    <!-- ===================================== -->
+
+    <!-- 독서모임의 찜 개수 조회 -->
+    <select id="selectWishCount" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club_wish
+        WHERE book_club_seq = #{bookClubSeq}
+    </select>
+
+    <!-- 특정 멤버의 찜 여부 확인 -->
+    <select id="selectWishExists" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_wish
+            WHERE book_club_seq = #{bookClubSeq} AND member_seq = #{memberSeq}
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 찜하기 추가 -->
+    <insert id="insertWish">
+        INSERT INTO book_club_wish (
+            book_club_seq,
+            member_seq,
+            crt_dtm
+        ) VALUES (
+            #{bookClubSeq},
+            #{memberSeq},
+            NOW()
+        )
+    </insert>
+
+    <!-- 찜하기 취소 -->
+    <delete id="deleteWish">
+        DELETE FROM book_club_wish
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{memberSeq}
+    </delete>
+
+    <!-- ===================================== -->
+    <!-- 게시판 관련 -->
+    <!-- ===================================== -->
+
+    <!-- 독서모임 게시판 - 최근 원글 10개 조회 (member_info 조인) -->
+    <select id="selectRecentRootBoardsByClub" resultType="project.bookclub.vo.BookClubBoardVO">
+        SELECT
+            bcb.book_club_board_seq,
+            bcb.book_club_seq,
+            bcb.board_title,
+            bcb.board_cont,
+            bcb.board_img_url,
+            bcb.member_seq,
+            bcb.parent_book_club_board_seq,
+            bcb.isbn,
+            bcb.book_title,
+            bcb.book_author,
+            bcb.book_img_url,
+
+            bcb.board_deleted_dtm,
+            bcb.crt_dtm AS board_crt_dtm,
+            bcb.upd_dtm AS board_upd_dtm,
+            DATE_FORMAT(bcb.crt_dtm, '%Y-%m-%d %H:%i') AS board_crt_dtm_text,
+            m.member_nicknm,
+            (SELECT COUNT(*)
+             FROM book_club_board
+             WHERE parent_book_club_board_seq = bcb.book_club_board_seq
+               AND board_deleted_dtm IS NULL
+               AND book_club_seq = #{bookClubSeq}
+            ) AS comment_count,
+            (SELECT COUNT(*)
+             FROM book_club_board_like
+             WHERE book_club_board_seq = bcb.book_club_board_seq
+            ) AS like_count
+        FROM book_club_board bcb
+        INNER JOIN member_info m ON bcb.member_seq = m.member_seq
+        WHERE bcb.book_club_seq = #{bookClubSeq}
+        AND bcb.parent_book_club_board_seq IS NULL
+        AND bcb.board_deleted_dtm IS NULL
+        ORDER BY bcb.book_club_board_seq DESC
+        LIMIT 10
+    </select>
+
+    <!-- 독서모임 게시글 단건 조회 (상세 페이지용) -->
+    <select id="selectBoardDetail" resultType="project.bookclub.vo.BookClubBoardVO">
+        SELECT
+            bcb.book_club_board_seq,
+            bcb.book_club_seq,
+            bcb.board_title,
+            bcb.board_cont,
+            bcb.board_img_url,
+            bcb.member_seq,
+            bcb.parent_book_club_board_seq,
+            bcb.isbn,
+            bcb.book_title,
+            bcb.book_author,
+            bcb.book_img_url,
+
+            bcb.board_deleted_dtm,
+            bcb.crt_dtm AS board_crt_dtm,
+            bcb.upd_dtm AS board_upd_dtm,
+            DATE_FORMAT(bcb.crt_dtm, '%Y-%m-%d %H:%i') AS board_crt_dtm_text,
+            m.member_nicknm,
+            (SELECT COUNT(*)
+             FROM book_club_board_like
+             WHERE book_club_board_seq = bcb.book_club_board_seq
+            ) AS like_count
+        FROM book_club_board bcb
+        INNER JOIN member_info m ON bcb.member_seq = m.member_seq
+        WHERE bcb.book_club_seq = #{bookClubSeq}
+        AND bcb.book_club_board_seq = #{postId}
+        AND bcb.board_deleted_dtm IS NULL
+    </select>
+
+    <!-- 독서모임 게시글의 댓글 목록 조회 (오래된 순) -->
+    <select id="selectBoardComments" resultType="project.bookclub.vo.BookClubBoardVO">
+        SELECT
+            bcb.book_club_board_seq,
+            bcb.book_club_seq,
+            bcb.board_title,
+            bcb.board_cont,
+            bcb.board_img_url,
+            bcb.member_seq,
+            bcb.parent_book_club_board_seq,
+            bcb.isbn,
+            bcb.book_title,
+            bcb.book_author,
+            bcb.book_img_url,
+
+            bcb.board_deleted_dtm,
+            bcb.crt_dtm AS board_crt_dtm,
+            bcb.upd_dtm AS board_upd_dtm,
+            DATE_FORMAT(bcb.crt_dtm, '%Y-%m-%d %H:%i') AS board_crt_dtm_text,
+            m.member_nicknm,
+            (SELECT COUNT(*)
+             FROM book_club_board_like
+             WHERE book_club_board_seq = bcb.book_club_board_seq
+            ) AS like_count
+        FROM book_club_board bcb
+        INNER JOIN member_info m ON bcb.member_seq = m.member_seq
+        WHERE bcb.book_club_seq = #{bookClubSeq}
+        AND bcb.parent_book_club_board_seq = #{postId}
+        AND bcb.board_deleted_dtm IS NULL
+        ORDER BY bcb.book_club_board_seq ASC
+    </select>
+
+    <!-- 부모글(원글) 존재 여부 확인 (우회 방지용) -->
+    <select id="existsRootPost" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_board
+            WHERE book_club_seq = #{bookClubSeq}
+            AND book_club_board_seq = #{postId}
+            AND parent_book_club_board_seq IS NULL
+            AND board_deleted_dtm IS NULL
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 댓글 INSERT -->
+    <insert id="insertBoardComment">
+        INSERT INTO book_club_board (
+            book_club_seq,
+            parent_book_club_board_seq,
+            member_seq,
+            board_cont
+        ) VALUES (
+            #{bookClubSeq},
+            #{postId},
+            #{memberSeq},
+            #{commentCont}
+        )
+    </insert>
+
+    <!-- 댓글 UPDATE -->
+    <update id="updateBoardComment">
+        UPDATE book_club_board
+        SET board_cont = #{commentCont}
+        WHERE book_club_board_seq = #{commentId}
+        AND parent_book_club_board_seq IS NOT NULL
+        AND board_deleted_dtm IS NULL
+    </update>
+
+    <!-- 댓글 DELETE (soft delete) -->
+    <update id="deleteBoardComment">
+        UPDATE book_club_board
+        SET board_deleted_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_board_seq = #{commentId}
+        AND parent_book_club_board_seq IS NOT NULL
+    </update>
+
+    <!-- 댓글 단건 조회 (권한 확인용) -->
+    <select id="selectBoardCommentById" resultType="project.bookclub.vo.BookClubBoardVO">
+        SELECT
+            book_club_board_seq,
+            book_club_seq,
+            parent_book_club_board_seq,
+            member_seq,
+            board_cont
+        FROM book_club_board
+        WHERE book_club_board_seq = #{commentId}
+        AND parent_book_club_board_seq IS NOT NULL
+        AND board_deleted_dtm IS NULL
+    </select>
+
+    <!-- 게시글(원글) INSERT -->
+    <insert id="insertBoardPost" parameterType="project.bookclub.vo.BookClubBoardVO" useGeneratedKeys="true" keyProperty="book_club_board_seq">
+        INSERT INTO book_club_board (
+            book_club_seq,
+            member_seq,
+            board_title,
+            board_cont,
+            board_img_url,
+            isbn,
+            book_title,
+            book_author,
+            book_img_url
+        ) VALUES (
+            #{book_club_seq},
+            #{member_seq},
+            #{board_title},
+            #{board_cont},
+            #{board_img_url},
+            #{isbn},
+            #{book_title},
+            #{book_author},
+            #{book_img_url}
+        )
+    </insert>
+
+    <!-- 게시글(원글) UPDATE -->
+    <update id="updateBoardPost" parameterType="project.bookclub.vo.BookClubBoardVO">
+        UPDATE book_club_board
+        SET board_title = #{board_title},
+            board_cont = #{board_cont},
+            board_img_url = #{board_img_url},
+            isbn = #{isbn},
+            book_title = #{book_title},
+            book_author = #{book_author},
+            book_img_url = #{book_img_url},
+            upd_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{book_club_seq}
+        AND book_club_board_seq = #{book_club_board_seq}
+        AND parent_book_club_board_seq IS NULL
+        AND board_deleted_dtm IS NULL
+    </update>
+
+    <!-- 게시글(원글) 삭제 (soft delete) -->
+    <update id="deleteBoardPost">
+        UPDATE book_club_board
+        SET board_deleted_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_board_seq = #{postId}
+        AND parent_book_club_board_seq IS NULL
+        AND board_deleted_dtm IS NULL
+    </update>
+
+    <select id="selectMyBookClubs" parameterType="long" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+            BC.BOOK_CLUB_SEQ,
+            BC.BOOK_CLUB_NAME,
+            BC.BOOK_CLUB_DESC,
+            BC.BOOK_CLUB_RG,
+            BC.BOOK_CLUB_MAX_MEMBER,
+            BC.BANNER_IMG_URL,
+            BC.BOOK_CLUB_SCHEDULE,
+            BC.CRT_DTM,
+            BCM.LEADER_YN,
+            (SELECT COUNT(*)
+               FROM BOOK_CLUB_MEMBER
+              WHERE BOOK_CLUB_SEQ = BC.BOOK_CLUB_SEQ
+                AND JOIN_ST = 'JOINED'
+            ) AS JOINED_MEMBER_COUNT
+        FROM BOOK_CLUB BC
+            JOIN BOOK_CLUB_MEMBER BCM ON BC.BOOK_CLUB_SEQ = BCM.BOOK_CLUB_SEQ
+        WHERE BCM.MEMBER_SEQ = #{member_seq}
+        AND BCM.JOIN_ST = 'JOINED'
+        AND BC.BOOK_CLUB_DELETED_DT IS NULL
+        ORDER BY BC.CRT_DTM DESC
+    </select>
+
+    <select id="selectWishBookClubs" parameterType="long" resultType="project.bookclub.vo.BookClubVO">
+        SELECT
+            BC.BOOK_CLUB_SEQ,
+            BC.BOOK_CLUB_NAME,
+            BC.BOOK_CLUB_DESC,
+            BC.BOOK_CLUB_RG,
+            BC.BOOK_CLUB_MAX_MEMBER,
+            BC.BANNER_IMG_URL,
+            BC.BOOK_CLUB_SCHEDULE,
+            W.CRT_DTM
+        FROM BOOK_CLUB BC
+            JOIN BOOK_CLUB_WISH W ON BC.BOOK_CLUB_SEQ = W.BOOK_CLUB_SEQ
+        WHERE W.MEMBER_SEQ = #{member_seq}
+        ORDER BY W.CRT_DTM DESC
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 관리 페이지 전용 -->
+    <!-- ===================================== -->
+
+    <!-- 관리 페이지 - JOINED 멤버 목록 조회 (member_info 조인) -->
+    <select id="selectJoinedMembersForManage" resultType="project.bookclub.dto.BookClubManageMemberDTO">
+        SELECT
+            bcm.book_club_member_seq AS bookClubMemberSeq,
+            bcm.book_club_seq AS bookClubSeq,
+            bcm.member_seq AS memberSeq,
+            CASE WHEN bcm.leader_yn = true THEN 'Y' ELSE 'N' END AS leaderYn,
+            bcm.join_st AS joinSt,
+            bcm.join_st_update_dtm AS joinStUpdateDtm,
+            m.member_nicknm AS nickname,
+            NULL AS profileImgUrl
+        FROM book_club_member bcm
+        INNER JOIN member_info m ON bcm.member_seq = m.member_seq
+        WHERE bcm.book_club_seq = #{bookClubSeq}
+        AND bcm.join_st = 'JOINED'
+        ORDER BY bcm.leader_yn DESC, bcm.join_st_update_dtm ASC
+    </select>
+
+    <!-- 관리 페이지 - WAIT 상태 가입 신청 목록 조회 (member_info 조인) -->
+    <select id="selectPendingRequestsForManage" resultType="project.bookclub.dto.BookClubJoinRequestDTO">
+        SELECT
+            bcr.book_club_request_seq AS requestSeq,
+            bcr.book_club_seq AS bookClubSeq,
+            bcr.request_member_seq AS requestMemberSeq,
+            bcr.request_cont AS requestCont,
+            bcr.request_st AS requestSt,
+            bcr.request_dtm AS requestDtm,
+            m.member_nicknm AS nickname,
+            NULL AS profileImgUrl
+        FROM book_club_request bcr
+        INNER JOIN member_info m ON bcr.request_member_seq = m.member_seq
+        WHERE bcr.book_club_seq = #{bookClubSeq}
+        AND bcr.request_st = 'WAIT'
+        ORDER BY bcr.request_dtm ASC
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 관리 페이지 - 가입 신청 승인/거절 -->
+    <!-- ===================================== -->
+
+    <!-- request 단건 조회 (ID로 조회) -->
+    <select id="selectRequestById" resultType="project.bookclub.dto.BookClubJoinRequestDTO">
+        SELECT
+            bcr.book_club_request_seq AS requestSeq,
+            bcr.book_club_seq AS bookClubSeq,
+            bcr.request_member_seq AS requestMemberSeq,
+            bcr.request_cont AS requestCont,
+            bcr.request_st AS requestSt,
+            bcr.request_dtm AS requestDtm,
+            bcr.request_processed_dt AS requestProcessedDt
+        FROM book_club_request bcr
+        WHERE bcr.book_club_request_seq = #{requestSeq}
+    </select>
+
+    <!-- book_club_member 중복 체크 (book_club_seq, member_seq 조합) -->
+    <select id="selectMemberCount" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_member
+            WHERE book_club_seq = #{bookClubSeq}
+            AND member_seq = #{memberSeq}
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- join_st 상태만 조회 (재가입 승인 로직용 - 키 문제 방지) -->
+    <select id="selectMemberJoinSt" resultType="string">
+        SELECT join_st
+        FROM book_club_member
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{memberSeq}
+    </select>
+
+    <!-- book_club_member INSERT (승인 시 사용, leader_yn=false, join_st='JOINED') -->
+    <insert id="insertMember">
+        INSERT INTO book_club_member (
+            book_club_seq,
+            member_seq,
+            leader_yn,
+            join_st,
+            join_st_update_dtm
+        ) VALUES (
+            #{bookClubSeq},
+            #{memberSeq},
+            false,
+            'JOINED',
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <!-- book_club_member UPDATE (재가입 승인 시 LEFT/KICKED/REJECTED -> JOINED로 복구) -->
+    <update id="restoreMemberToJoined">
+        UPDATE book_club_member
+        SET join_st = 'JOINED',
+        join_st_update_dtm = CURRENT_TIMESTAMP,
+        leader_yn = false
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{memberSeq}
+        AND join_st != 'JOINED'
+    </update>
+
+    <!-- book_club_request 상태 업데이트 (APPROVED 또는 REJECTED) -->
+    <update id="updateRequestStatus">
+        UPDATE book_club_request
+        SET request_st = #{status},
+            request_processed_dt = CURRENT_DATE
+        WHERE book_club_request_seq = #{requestSeq}
+    </update>
+
+    <!-- ===================================== -->
+    <!-- 관리 페이지 - 멤버 강퇴 -->
+    <!-- ===================================== -->
+
+    <!-- 타겟 멤버 상태 조회 (강퇴 검증용) -->
+    <select id="selectMemberBySeq" resultType="project.bookclub.dto.BookClubManageMemberDTO">
+        SELECT
+            bcm.book_club_member_seq AS bookClubMemberSeq,
+            bcm.book_club_seq AS bookClubSeq,
+            bcm.member_seq AS memberSeq,
+            CASE WHEN bcm.leader_yn = true THEN 'Y' ELSE 'N' END AS leaderYn,
+            bcm.join_st AS joinSt,
+            bcm.join_st_update_dtm AS joinStUpdateDtm,
+            m.member_nicknm AS nickname,
+            NULL AS profileImgUrl
+        FROM book_club_member bcm
+        INNER JOIN member_info m ON bcm.member_seq = m.member_seq
+        WHERE bcm.book_club_seq = #{bookClubSeq}
+        AND bcm.member_seq = #{memberSeq}
+    </select>
+
+    <!-- 멤버 강퇴 - join_st='KICKED' 업데이트 -->
+    <update id="updateMemberToKicked">
+        UPDATE book_club_member
+        SET join_st = 'KICKED',
+            join_st_update_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{memberSeq}
+        AND join_st = 'JOINED'
+    </update>
+
+    <!-- ===================================== -->
+    <!-- 관리 페이지 - 모임 설정 업데이트 -->
+    <!-- ===================================== -->
+
+    <!-- 모임 설정 업데이트 (정보 수정) -->
+    <update id="updateBookClubSettings">
+        UPDATE book_club
+        SET book_club_name = #{name},
+            book_club_desc = #{desc},
+            book_club_rg = #{region},
+            book_club_schedule = #{schedule},
+            banner_img_url = #{bannerImgUrl},
+            upd_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+    </update>
+
+    <!-- 모임명 중복 체크 (현재 모임 제외) -->
+    <select id="countByLeaderAndNameExcludingSelf" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club
+        WHERE book_club_leader_seq = #{leaderSeq}
+        AND book_club_name = #{name}
+        AND book_club_seq != #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 멤버 탈퇴 관련 -->
+    <!-- ===================================== -->
+
+    <!-- 멤버 탈퇴 - join_st='LEFT' 업데이트 -->
+    <update id="updateMemberToLeft">
+        UPDATE book_club_member
+        SET join_st = 'LEFT',
+            join_st_update_dtm = CURRENT_TIMESTAMP,
+            leader_yn = false
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{memberSeq}
+        AND join_st = 'JOINED'
+    </update>
+
+    <!-- 승계 대상 조회 (leader 제외 JOINED 멤버 중 가장 오래된 1명) -->
+    <select id="selectNextLeaderCandidate" resultType="java.lang.Long">
+        SELECT member_seq
+        FROM book_club_member
+        WHERE book_club_seq = #{bookClubSeq}
+        AND join_st = 'JOINED'
+        AND leader_yn = false
+        ORDER BY join_st_update_dtm IS NULL, join_st_update_dtm ASC
+        LIMIT 1
+    </select>
+
+    <!-- 새 리더로 승계 (leader_yn=true) -->
+    <update id="updateMemberToLeader">
+        UPDATE book_club_member
+        SET leader_yn = true
+        WHERE book_club_seq = #{bookClubSeq}
+        AND member_seq = #{newLeaderSeq}
+        AND join_st = 'JOINED'
+    </update>
+
+    <!-- book_club 리더 변경 -->
+    <update id="updateBookClubLeader">
+        UPDATE book_club
+        SET book_club_leader_seq = #{newLeaderSeq},
+            upd_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+    </update>
+
+    <!-- 모임 종료 (soft delete) -->
+    <update id="closeBookClub">
+        UPDATE book_club
+        SET book_club_deleted_dt = CURRENT_TIMESTAMP,
+            upd_dtm = CURRENT_TIMESTAMP
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+    </update>
+    <update id="signOutAll">
+        UPDATE book_club_member
+        SET join_st = 'LEFT'
+        WHERE book_club_member_seq = #{member_seq}
+    </update>
+
+    <!-- ===================================
+         Stage 4: 삭제 시 S3 정리용
+         =================================== -->
+
+    <!-- 모임의 모든 게시글 이미지 URL 조회 (삭제되지 않은 게시글만, NULL 제외) -->
+    <select id="selectAllBoardImageUrls" resultType="string">
+        SELECT board_img_url
+        FROM book_club_board
+        WHERE book_club_seq = #{bookClubSeq}
+        AND board_deleted_dtm IS NULL
+        AND board_img_url IS NOT NULL
+        AND board_img_url != ''
+    </select>
+
+    <!-- 내 멤버 상태 조회 (요구사항 SQL #1) -->
+    <select id="selectMyMemberStatus" resultType="java.util.HashMap">
+        SELECT leader_yn, join_st
+        FROM book_club_member
+        WHERE book_club_seq=#{bookClubSeq} AND member_seq=#{memberSeq}
+    </select>
+
+    <!-- book_club 행 잠금 (동시성 제어) -->
+    <select id="lockBookClubForUpdate" resultType="java.lang.Long">
+        SELECT book_club_seq
+        FROM book_club
+        WHERE book_club_seq = #{bookClubSeq}
+        AND book_club_deleted_dt IS NULL
+        FOR UPDATE
+    </select>
+
+    <!-- ===================================== -->
+    <!-- 게시글/댓글 좋아요 관련 -->
+    <!-- ===================================== -->
+
+    <!-- 게시글/댓글의 좋아요 개수 조회 -->
+    <select id="selectBoardLikeCount" resultType="int">
+        SELECT COUNT(*)
+        FROM book_club_board_like
+        WHERE book_club_board_seq = #{boardSeq}
+    </select>
+
+    <!-- 특정 멤버의 좋아요 여부 확인 -->
+    <select id="selectBoardLikeExists" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM book_club_board_like
+            WHERE book_club_board_seq = #{boardSeq}
+            AND member_seq = #{memberSeq}
+        ) THEN 1 ELSE 0 END
+    </select>
+
+    <!-- 좋아요 추가 -->
+    <insert id="insertBoardLike">
+        INSERT INTO book_club_board_like (
+            book_club_board_seq,
+            member_seq,
+            crt_dtm
+        ) VALUES (
+            #{boardSeq},
+            #{memberSeq},
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <!-- 좋아요 취소 -->
+    <delete id="deleteBoardLike">
+        DELETE FROM book_club_board_like
+        WHERE book_club_board_seq = #{boardSeq}
+        AND member_seq = #{memberSeq}
+    </delete>
+
+</mapper>

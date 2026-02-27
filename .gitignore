@@ -1,0 +1,28 @@
+# Maven 빌드 결과물
+target/
+
+# 민감 정보 (절대 커밋 금지)
+src/main/resources/application.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cargo (Tomcat)
+cargo/
