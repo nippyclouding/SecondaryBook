@@ -4,13 +4,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import project.trade.ENUM.SaleStatus;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
 @Data
 @NoArgsConstructor
-public class ChatroomVO {
+public class ChatroomVO implements Serializable {
     private long chat_room_seq;
     private long trade_seq;
     private LocalDateTime last_msg_dtm;

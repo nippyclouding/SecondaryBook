@@ -1,12 +1,13 @@
 package project.settlement;
 
 import lombok.Data;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import project.settlement.SettlementStatus;
 
 @Data
-public class SettlementVO {
+public class SettlementVO implements Serializable {
     private long settlement_seq;
     private long trade_seq;
     private long member_seller_seq;

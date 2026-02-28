@@ -270,12 +270,11 @@ document.addEventListener("DOMContentLoaded", function () {
         sendMessage();
     });
 
-    // Enter 키 전송
+    // Enter 키 전송 (e.isComposing: 한글 IME 조합 중 Enter 두 번 발생 방지)
     messageInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault(); // 줄바꿈 방지
-            sendMessage();      // 버튼 클릭과 동일
-            console.log("Enter 이벤트");
+        if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+            e.preventDefault();
+            sendMessage();
         }
     });
 });

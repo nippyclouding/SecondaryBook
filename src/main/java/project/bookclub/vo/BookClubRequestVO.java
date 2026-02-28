@@ -2,11 +2,12 @@ package project.bookclub.vo;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-public class BookClubRequestVO {
+public class BookClubRequestVO implements Serializable {
     private Long book_club_seq; // 독서모임 ID, FK
     private Long book_club_request_seq; // 독서모임 가입 요청 ID
     private Long request_member_seq; // 가입을 요청한 멤버 ID

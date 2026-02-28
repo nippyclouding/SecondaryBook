@@ -560,12 +560,12 @@
             BC.CRT_DTM,
             BCM.LEADER_YN,
             (SELECT COUNT(*)
-               FROM BOOK_CLUB_MEMBER
+               FROM book_club_member
               WHERE BOOK_CLUB_SEQ = BC.BOOK_CLUB_SEQ
                 AND JOIN_ST = 'JOINED'
             ) AS JOINED_MEMBER_COUNT
-        FROM BOOK_CLUB BC
-            JOIN BOOK_CLUB_MEMBER BCM ON BC.BOOK_CLUB_SEQ = BCM.BOOK_CLUB_SEQ
+        FROM book_club BC
+            JOIN book_club_member BCM ON BC.BOOK_CLUB_SEQ = BCM.BOOK_CLUB_SEQ
         WHERE BCM.MEMBER_SEQ = #{member_seq}
         AND BCM.JOIN_ST = 'JOINED'
         AND BC.BOOK_CLUB_DELETED_DT IS NULL
@@ -582,8 +582,8 @@
             BC.BANNER_IMG_URL,
             BC.BOOK_CLUB_SCHEDULE,
             W.CRT_DTM
-        FROM BOOK_CLUB BC
-            JOIN BOOK_CLUB_WISH W ON BC.BOOK_CLUB_SEQ = W.BOOK_CLUB_SEQ
+        FROM book_club BC
+            JOIN book_club_wish W ON BC.BOOK_CLUB_SEQ = W.BOOK_CLUB_SEQ
         WHERE W.MEMBER_SEQ = #{member_seq}
         ORDER BY W.CRT_DTM DESC
     </select>

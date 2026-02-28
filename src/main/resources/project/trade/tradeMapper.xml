@@ -344,8 +344,8 @@
         T.SALE_ST,
         T.BOOK_ST,
         T.SALE_RG,
-        T.BOOK_IMG      FROM SB_TRADE_INFO T
-        JOIN TRADE_WISH W ON T.TRADE_SEQ = W.TRADE_SEQ
+        T.BOOK_IMG      FROM sb_trade_info T
+        JOIN trade_wish W ON T.TRADE_SEQ = W.TRADE_SEQ
         WHERE W.MEMBER_SEQ = #{member_seq}
         ORDER BY W.CRT_DTM DESC
     </select>
@@ -363,7 +363,7 @@
         , T.POST_NO
         , T.ADDR_H
         , T.ADDR_D
-        FROM SB_TRADE_INFO T
+        FROM sb_trade_info T
         WHERE T.MEMBER_BUYER_SEQ = #{member_seq}
         ORDER BY T.SALE_ST_DTM DESC
     </select>
@@ -384,7 +384,7 @@
         , T.ADDR_D
         , T.SETTLEMENT_ST
         , T.DELIVERY_COST
-        FROM SB_TRADE_INFO T
+        FROM sb_trade_info T
         WHERE T.MEMBER_SELLER_SEQ = #{member_seq}
         AND T.DEL_DTM IS NULL
         <if test="status != null and status !='all'">
@@ -394,11 +394,10 @@
     </select>
 
     <!-- 안전결제 상태 조회 (비관적 락) -->
-    <select id="findSafePaymentStatus" resultType="String">
+    <select id="findSafePaymentStatus" resultType="project.trade.ENUM.SafePaymentStatus">
         SELECT COALESCE(safe_payment_st, 'NONE')
         FROM sb_trade_info
         WHERE trade_seq = #{trade_seq}
-        FOR UPDATE <!-- DB 입장에서는 조회가 아닌 쓰기-->
     </select>
 
     <!-- 안전결제 상태 업데이트 -->

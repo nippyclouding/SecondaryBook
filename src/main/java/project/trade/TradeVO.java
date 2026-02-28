@@ -18,10 +18,11 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class TradeVO {
+public class TradeVO implements Serializable {
     // DB 컬럼명과 일치시킨 필드들
     private long trade_seq;
     private long member_seller_seq; // 추가
@@ -70,7 +71,7 @@ public class TradeVO {
     private Integer book_org_price;     // 책 원가
 
     // 이미지 리스트
-    private List<MultipartFile> uploadFiles; // form 에서 받아오는 데이터
+    private transient List<MultipartFile> uploadFiles; // form 에서 받아오는 데이터 (직렬화 제외)
     private List<String> imgUrls; // db에 저장할 데이터
     private List<TradeImageVO> trade_img; // 화면 출력용
     private List<String> keepImageUrls; // 수정 시 유지할 기존 이미지 URL 목록

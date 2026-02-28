@@ -1,6 +1,7 @@
 package project.admin;
 
 import lombok.Data;
+import java.io.Serializable;
 import project.util.Const;
 
 import java.time.LocalDateTime;
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 import static project.util.Const.*;
 
 @Data
-public class LoginInfoVO {
+public class LoginInfoVO implements Serializable {
     private Long login_info_seq;
     private Long admin_seq;
     private Long member_seq;

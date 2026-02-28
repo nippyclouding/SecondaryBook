@@ -4,7 +4,7 @@
 -- 대신 각 컬럼에서 ENUM(...) 타입을 직접 선언
 
 -- DB 초기화
-DROP DATABASE secondHandBook;
+DROP DATABASE IF EXISTS secondHandBook;
 CREATE DATABASE secondHandBook
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
@@ -190,8 +190,9 @@ CREATE TABLE IF NOT EXISTS chat_msg (
     chat_cont           TEXT,
     sent_dtm            TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     read_yn             TINYINT(1)      DEFAULT 0,
-    FOREIGN KEY (chat_room_seq) REFERENCES chatroom(chat_room_seq),
-    FOREIGN KEY (trade_seq) REFERENCES sb_trade_info(trade_seq)
+    FOREIGN KEY (chat_room_seq) REFERENCES chatroom(chat_room_seq)
+    -- trade_seq FK 제거: 시스템 메시지(결제 알림 등)는 trade_seq가 없어 FK 위반 발생
+    -- trade 컨텍스트는 chat_room_seq → chatroom.trade_seq로 조회 가능
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

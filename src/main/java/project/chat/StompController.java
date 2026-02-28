@@ -13,6 +13,7 @@ import project.chat.message.MessageService;
 import project.chat.message.MessageVO;
 import project.chat.pubsub.ChatMessagePublisher;
 import project.member.MemberVO;
+import project.trade.ENUM.SafePaymentStatus;
 import project.trade.ENUM.SaleStatus;
 import project.trade.TradeService;
 import project.trade.TradeVO;
@@ -86,7 +87,7 @@ public class StompController {
         // '판매자' 만 안전 결제 요청 가능, 다른 유저가 시도 시 false, 이미 판매 완료된 상품에 안전 결제 시도 시 false
         if (trade == null || trade.getMember_seller_seq() != sessionMember.getMember_seq() ||
                 trade.getSale_st() == SaleStatus.SOLD ||
-                !"NONE".equals(trade.getSafe_payment_st())) {
+                trade.getSafe_payment_st() != SafePaymentStatus.NONE) {
             return false;
         }
 

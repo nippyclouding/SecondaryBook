@@ -3,6 +3,7 @@ package project.admin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import java.io.Serializable;
 import project.util.Const;
 
 import javax.validation.constraints.NotBlank;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 
 
 @Data
-public class NoticeVO {
+public class NoticeVO implements Serializable {
     private Long notice_seq;
     private Long admin_seq;
 

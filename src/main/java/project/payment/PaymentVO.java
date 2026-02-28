@@ -4,12 +4,13 @@ import lombok.Setter;
 import lombok.ToString;
 import project.trade.TradeVO;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @ToString(exclude = {"payment_key", "card_number", "card_company"})
-public class PaymentVO {
+public class PaymentVO implements Serializable {
 
     private Long payment_seq;       // PK
     private Long trade_seq;         // 거래 번호 (FK)

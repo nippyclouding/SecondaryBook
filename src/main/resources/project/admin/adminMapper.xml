@@ -8,22 +8,22 @@
         SELECT ADMIN_SEQ
              , ADMIN_LOGIN_ID
              , ADMIN_PASSWORD
-          FROM ADMIN
+          FROM admin
          WHERE ADMIN_LOGIN_ID = #{id}
     </select>
 
     <select id="countAllMembers" resultType="int">
-        SELECT COUNT(*) FROM MEMBER_INFO WHERE MEMBER_DELETED_DTM IS NULL
+        SELECT COUNT(*) FROM member_info WHERE MEMBER_DELETED_DTM IS NULL
     </select>
     <select id="countAllTrades" resultType="int">
-        SELECT COUNT(*) FROM SB_TRADE_INFO WHERE DEL_DTM IS NULL
+        SELECT COUNT(*) FROM sb_trade_info WHERE DEL_DTM IS NULL
     </select>
     <select id="countAllBookClubs" resultType="int">
-        SELECT COUNT(*) FROM BOOK_CLUB WHERE BOOK_CLUB_DELETED_DT IS NULL
+        SELECT COUNT(*) FROM book_club WHERE BOOK_CLUB_DELETED_DT IS NULL
     </select>
 
     <select id="searchMembers" parameterType="project.util.paging.SearchVO" resultType="project.member.MemberVO">
-        SELECT * FROM MEMBER_INFO
+        SELECT * FROM member_info
         WHERE MEMBER_DELETED_DTM IS NULL
         <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
             AND MEMBER_ST = #{status}
@@ -47,7 +47,7 @@
 
     <select id="countAllMembersBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
         SELECT COUNT(*)
-          FROM MEMBER_INFO
+          FROM member_info
          WHERE MEMBER_DELETED_DTM IS NULL
         <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
             AND MEMBER_ST = #{status}
@@ -75,7 +75,7 @@
              , SALE_ST
              , BOOK_TITLE
              , CRT_DTM
-          FROM SB_TRADE_INFO
+          FROM sb_trade_info
          WHERE DEL_DTM IS NULL
         <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
             AND SALE_ST = #{status}
@@ -102,7 +102,7 @@
 
     <select id="countAllTradesBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
         SELECT COUNT(*)
-          FROM SB_TRADE_INFO
+          FROM sb_trade_info
          WHERE DEL_DTM IS NULL
         <if test="status != null and status != '' and status != 'all' and status != 'ALL'">
             AND SALE_ST = #{status}
@@ -132,7 +132,7 @@
              , BOOK_CLUB_MAX_MEMBER
              , BOOK_CLUB_SCHEDULE
              , CRT_DTM
-          FROM BOOK_CLUB
+          FROM book_club
          WHERE BOOK_CLUB_DELETED_DT IS NULL
         <if test="keyword != null and keyword != ''">
             <choose>
@@ -153,7 +153,7 @@
 
     <select id="countAllGroupsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
         SELECT COUNT(*)
-          FROM BOOK_CLUB
+          FROM book_club
          WHERE BOOK_CLUB_DELETED_DT IS NULL
         <if test="keyword != null and keyword != ''">
             <choose>
@@ -178,8 +178,8 @@
              , L.LOGOUT_DTM
              , L.LOGOUT_IP
              , A.ADMIN_LOGIN_ID
-          FROM LOGIN_INFO L
-         INNER JOIN ADMIN A
+          FROM login_info L
+         INNER JOIN admin A
             ON L.ADMIN_SEQ = A.ADMIN_SEQ
          WHERE L.ADMIN_SEQ IS NOT NULL
         <if test="keyword != null and keyword != ''">
@@ -204,8 +204,8 @@
 
     <select id="countAdminLoginLogsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
         SELECT COUNT(*)
-          FROM LOGIN_INFO L
-         INNER JOIN ADMIN A
+          FROM login_info L
+         INNER JOIN admin A
             ON L.ADMIN_SEQ = A.ADMIN_SEQ
          WHERE L.ADMIN_SEQ IS NOT NULL
         <if test="keyword != null and keyword != ''">
@@ -234,8 +234,8 @@
              , L.LOGOUT_DTM
              , L.LOGOUT_IP
              , M.MEMBER_NICKNM
-        FROM LOGIN_INFO L
-        INNER JOIN MEMBER_INFO M
+        FROM login_info L
+        INNER JOIN member_info M
         ON L.MEMBER_SEQ = M.MEMBER_SEQ
         WHERE L.MEMBER_SEQ IS NOT NULL
         <if test="keyword != null and keyword != ''">
@@ -260,8 +260,8 @@
 
     <select id="countUsersLoginLogsBySearch" parameterType="project.util.paging.SearchVO" resultType="int">
         SELECT COUNT(*)
-          FROM LOGIN_INFO L
-         INNER JOIN MEMBER_INFO M
+          FROM login_info L
+         INNER JOIN member_info M
             ON L.MEMBER_SEQ = M.MEMBER_SEQ
          WHERE L.MEMBER_SEQ IS NOT NULL
         <if test="keyword != null and keyword != ''">
@@ -289,8 +289,8 @@
              , N.VIEW_COUNT
              , N.CRT_DTM
              , A.ADMIN_LOGIN_ID
-          FROM NOTICE N
-          LEFT JOIN ADMIN A
+          FROM notice N
+          LEFT JOIN admin A
             ON N.ADMIN_SEQ = A.ADMIN_SEQ
         <where>
             <if test="keyword != null and keyword != ''">
@@ -334,26 +334,26 @@
     </select>
 
     <update id="updateMemberStatus">
-        UPDATE MEMBER_INFO SET MEMBER_ST = #{status} WHERE MEMBER_SEQ = #{seq}
+        UPDATE member_info SET MEMBER_ST = #{status} WHERE MEMBER_SEQ = #{seq}
     </update>
     <update id="deleteMember">
-        UPDATE MEMBER_INFO SET MEMBER_DELETED_DTM = NOW() WHERE MEMBER_SEQ = #{seq}
+        UPDATE member_info SET MEMBER_DELETED_DTM = NOW() WHERE MEMBER_SEQ = #{seq}
     </update>
 
     <update id="updateTradeStatus">
-        UPDATE SB_TRADE_INFO SET SALE_ST = #{status} WHERE TRADE_SEQ = #{seq}
+        UPDATE sb_trade_info SET SALE_ST = #{status} WHERE TRADE_SEQ = #{seq}
     </update>
     <update id="deleteTrade">
-        UPDATE SB_TRADE_INFO SET DEL_DTM = NOW() WHERE TRADE_SEQ = #{seq}
+        UPDATE sb_trade_info SET DEL_DTM = NOW() WHERE TRADE_SEQ = #{seq}
     </update>
 
     <update id="deleteBookClub">
-        UPDATE BOOK_CLUB SET BOOK_CLUB_DELETED_DT = CURRENT_DATE WHERE BOOK_CLUB_SEQ = #{seq}
+        UPDATE book_club SET BOOK_CLUB_DELETED_DT = CURRENT_DATE WHERE BOOK_CLUB_SEQ = #{seq}
     </update>
 
     <select id="selectDailySignupStats" resultType="map">
         SELECT DATE_FORMAT(crt_dtm, '%Y-%m-%d') as date, COUNT(*) as count
-        FROM MEMBER_INFO
+        FROM member_info
         WHERE crt_dtm >= DATE_SUB(CURRENT_DATE, INTERVAL 6 DAY)
         GROUP BY DATE_FORMAT(crt_dtm, '%Y-%m-%d')
         ORDER BY date
@@ -361,7 +361,7 @@
 
     <select id="selectDailyTradeStats" resultType="map">
         SELECT DATE_FORMAT(crt_dtm, '%Y-%m-%d') as date, COUNT(*) as count
-        FROM SB_TRADE_INFO
+        FROM sb_trade_info
         WHERE crt_dtm >= DATE_SUB(CURRENT_DATE, INTERVAL 6 DAY)
         GROUP BY DATE_FORMAT(crt_dtm, '%Y-%m-%d')
         ORDER BY date
@@ -378,7 +378,7 @@
     </select>
 
     <select id="selectRecentMembers" resultType="project.member.MemberVO">
-        SELECT * FROM MEMBER_INFO
+        SELECT * FROM member_info
         WHERE MEMBER_DELETED_DTM IS NULL
         ORDER BY CRT_DTM DESC
         LIMIT 10
@@ -386,7 +386,7 @@
 
     <select id="selectRecentTrades" resultType="project.trade.TradeVO">
         SELECT trade_seq, sale_title, sale_price, sale_rg, sale_st, book_title, crt_dtm
-        FROM SB_TRADE_INFO
+        FROM sb_trade_info
         WHERE DEL_DTM IS NULL
         ORDER BY CRT_DTM DESC
         LIMIT 10
@@ -400,7 +400,7 @@
         BOOK_CLUB_MAX_MEMBER,
         BOOK_CLUB_SCHEDULE,
         CRT_DTM
-        FROM BOOK_CLUB
+        FROM book_club
         WHERE BOOK_CLUB_DELETED_DT IS NULL
         ORDER BY CRT_DTM DESC
         LIMIT 10
@@ -416,8 +416,8 @@
         , L.LOGOUT_IP
         , M.MEMBER_NICKNM
         , M.MEMBER_EMAIL
-        FROM LOGIN_INFO L
-        INNER JOIN MEMBER_INFO M
+        FROM login_info L
+        INNER JOIN member_info M
         ON L.MEMBER_SEQ = M.MEMBER_SEQ
         WHERE L.MEMBER_SEQ IS NOT NULL
         ORDER BY L.LOGIN_DTM DESC
@@ -433,8 +433,8 @@
         , L.LOGOUT_DTM
         , L.LOGOUT_IP
         , A.ADMIN_LOGIN_ID
-        FROM LOGIN_INFO L
-        INNER JOIN ADMIN A
+        FROM login_info L
+        INNER JOIN admin A
         ON L.ADMIN_SEQ = A.ADMIN_SEQ
         WHERE L.ADMIN_SEQ IS NOT NULL
         ORDER BY L.LOGIN_DTM DESC
@@ -443,18 +443,18 @@
 
     <!-- 관리자 로그인 기록 저장 -->
     <insert id="insertAdminLogin">
-        INSERT INTO LOGIN_INFO (ADMIN_SEQ, LOGIN_DTM, LOGIN_IP)
+        INSERT INTO login_info (ADMIN_SEQ, LOGIN_DTM, LOGIN_IP)
         VALUES (#{admin_seq}, CURRENT_TIMESTAMP, #{login_ip})
     </insert>
 
     <!-- 관리자 로그아웃 기록 -->
     <update id="updateAdminLogout">
-        UPDATE LOGIN_INFO
+        UPDATE login_info
         SET LOGOUT_DTM = CURRENT_TIMESTAMP
         , LOGOUT_IP = #{logout_ip}
         WHERE LOGIN_INFO_SEQ = (
         SELECT LOGIN_INFO_SEQ
-        FROM LOGIN_INFO
+        FROM login_info
         WHERE ADMIN_SEQ = #{admin_seq}
         AND LOGOUT_DTM IS NULL
         ORDER BY LOGIN_DTM DESC
@@ -463,17 +463,17 @@
     </update>
 
     <insert id="insertMemberLogin">
-        INSERT INTO LOGIN_INFO (MEMBER_SEQ, LOGIN_DTM, LOGIN_IP)
+        INSERT INTO login_info (MEMBER_SEQ, LOGIN_DTM, LOGIN_IP)
         VALUES (#{member_seq}, CURRENT_TIMESTAMP, #{login_ip})
     </insert>
 
     <update id="updateMemberLogout">
-        UPDATE LOGIN_INFO
+        UPDATE login_info
         SET LOGOUT_DTM = CURRENT_TIMESTAMP
         , LOGOUT_IP = #{logout_ip}
         WHERE LOGIN_INFO_SEQ = (
         SELECT LOGIN_INFO_SEQ
-        FROM LOGIN_INFO
+        FROM login_info
         WHERE MEMBER_SEQ = #{member_seq}
         AND LOGOUT_DTM IS NULL
         ORDER BY LOGIN_DTM DESC
@@ -503,30 +503,30 @@
     </resultMap>
 
     <select id="selectBanners" resultMap="BannerMap">
-        SELECT * FROM BANNER WHERE IS_ACTIVE = TRUE ORDER BY ORDER_IDX ASC
+        SELECT * FROM banner WHERE is_active = TRUE ORDER BY order_idx ASC
     </select>
 
     <insert id="insertBanner">
-        INSERT INTO BANNER (TITLE, SUBTITLE, BG_COLOR_FROM, BG_COLOR_TO, BTN_TEXT, BTN_LINK, ICON_NAME, ORDER_IDX)
+        INSERT INTO banner (title, subtitle, bg_color_from, bg_color_to, btn_text, btn_link, icon_name, order_idx)
         VALUES (#{title}, #{subtitle}, #{bgColorFrom}, #{bgColorTo}, #{btnText}, #{btnLink}, #{iconName},
-                (SELECT COALESCE(MAX(ORDER_IDX), 0) + 1 FROM BANNER))
+                (SELECT COALESCE(MAX(order_idx), 0) + 1 FROM banner b))
     </insert>
 
     <delete id="deleteBanner">
-        DELETE FROM BANNER WHERE BANNER_SEQ = #{bannerSeq}
+        DELETE FROM banner WHERE banner_seq = #{bannerSeq}
     </delete>
 
     <insert id="insertTempPage" useGeneratedKeys="true" keyProperty="pageSeq">
-        INSERT INTO TEMP_PAGE (TITLE, CONTENT)
+        INSERT INTO temp_page (TITLE, CONTENT)
         VALUES (#{title}, #{content})
     </insert>
 
     <select id="selectTempPage" resultMap="TempPageMap">
-        SELECT * FROM TEMP_PAGE WHERE PAGE_SEQ = #{pageSeq}
+        SELECT * FROM temp_page WHERE PAGE_SEQ = #{pageSeq}
     </select>
 
     <insert id="insertNotice">
-        INSERT INTO NOTICE (
+        INSERT INTO notice (
                ADMIN_SEQ
              , NOTICE_TITLE
              , NOTICE_PRIORITY
@@ -553,8 +553,8 @@
              , N.NOTICE_CONT
              , N.CRT_DTM
              , A.ADMIN_LOGIN_ID
-          FROM NOTICE N
-          LEFT JOIN ADMIN A
+          FROM notice N
+          LEFT JOIN admin A
             ON N.ADMIN_SEQ = A.ADMIN_SEQ
          ORDER BY N.NOTICE_PRIORITY DESC, N.CRT_DTM DESC
          LIMIT 50
@@ -570,8 +570,8 @@
              , N.NOTICE_CONT
              , N.CRT_DTM
              , A.ADMIN_LOGIN_ID
-          FROM NOTICE N
-          LEFT JOIN ADMIN A
+          FROM notice N
+          LEFT JOIN admin A
             ON N.ADMIN_SEQ = A.ADMIN_SEQ
          WHERE N.NOTICE_SEQ = #{notice_seq}
     </select>
@@ -584,7 +584,7 @@
              , ACTIVE
              , NOTICE_PRIORITY
              , VIEW_COUNT
-          FROM NOTICE
+          FROM notice
         WHERE 1=1
         <if test="status != null and status != ''">
             AND ACTIVE = (#{status} = 'true')</if>
@@ -597,7 +597,7 @@
 
     <select id="countActiveNotices" resultType="int">
         SELECT COUNT(*)
-          FROM NOTICE
+          FROM notice
           WHERE ACTIVE = TRUE
         <if test="keyword != null and keyword != ''">
             AND NOTICE_TITLE LIKE CONCAT('%', #{keyword}, '%')
@@ -723,18 +723,18 @@
 
 
     <update id="increaseViewCount">
-        UPDATE NOTICE
+        UPDATE notice
            SET VIEW_COUNT = VIEW_COUNT + 1
          WHERE NOTICE_SEQ = #{notice_seq}
     </update>
 
     <delete id="deleteNotice">
-        DELETE FROM NOTICE
+        DELETE FROM notice
          WHERE NOTICE_SEQ = #{notice_seq}
     </delete>
 
     <update id="updateNotice" parameterType="project.admin.NoticeVO">
-        UPDATE NOTICE
+        UPDATE notice
            SET NOTICE_TITLE = #{notice_title}
              , NOTICE_CONT = #{notice_cont}
              , NOTICE_PRIORITY = #{notice_priority}

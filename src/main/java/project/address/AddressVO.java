@@ -2,11 +2,12 @@ package project.address;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
 @Data
-public class AddressVO {
+public class AddressVO implements Serializable {
     private long addr_seq;
     private long member_seq;
 

@@ -6,13 +6,13 @@
 
     <select id="selectAddressList" parameterType="long" resultType="project.address.AddressVO">
         SELECT *
-        FROM ADDRESS_INFO
+        FROM address_info
         WHERE MEMBER_SEQ = #{member_seq}
         ORDER BY DEFAULT_YN DESC, ADDR_SEQ DESC
     </select>
 
     <insert id="insertAddress" parameterType="project.address.AddressVO">
-        INSERT INTO ADDRESS_INFO (
+        INSERT INTO address_info (
             MEMBER_SEQ, ADDR_NM, POST_NO, ADDR_H, ADDR_D, DEFAULT_YN
         ) VALUES (
                      #{member_seq}, #{addr_nm}, #{post_no}, #{addr_h}, #{addr_d}, #{default_yn}
@@ -20,26 +20,26 @@
     </insert>
 
     <delete id="deleteAddress">
-        DELETE FROM ADDRESS_INFO
+        DELETE FROM address_info
         WHERE ADDR_SEQ = #{addr_seq}
           AND MEMBER_SEQ = #{member_seq}
     </delete>
 
     <update id="resetDefaultAddress" parameterType="long">
-        UPDATE ADDRESS_INFO
+        UPDATE address_info
         SET DEFAULT_YN = 0
         WHERE MEMBER_SEQ = #{member_seq}
     </update>
 
     <update id="setDefaultAddress">
-        UPDATE ADDRESS_INFO
+        UPDATE address_info
         SET DEFAULT_YN = 1
         WHERE ADDR_SEQ = #{addr_seq}
           AND MEMBER_SEQ = #{member_seq}
     </update>
 
     <update id="updateAddress" parameterType="project.address.AddressVO">
-        UPDATE ADDRESS_INFO
+        UPDATE address_info
         SET ADDR_NM = #{addr_nm}
           , POST_NO = #{post_no}
           , ADDR_H = #{addr_h}
@@ -51,7 +51,7 @@
 
     <select id="countAddress" parameterType="long" resultType="int">
         SELECT COUNT(*)
-        FROM ADDRESS_INFO
+        FROM address_info
         WHERE MEMBER_SEQ = #{member_seq}
     </select>
 </mapper>

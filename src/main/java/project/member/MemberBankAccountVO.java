@@ -1,10 +1,11 @@
 package project.member;
 
 import lombok.Data;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-public class MemberBankAccountVO {
+public class MemberBankAccountVO implements Serializable {
     private long bank_account_seq;
     private long member_seq;
     private String bank_code;

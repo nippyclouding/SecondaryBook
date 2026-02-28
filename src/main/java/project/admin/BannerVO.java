@@ -1,10 +1,11 @@
 package project.admin;
 
 import lombok.Data;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-public class BannerVO {
+public class BannerVO implements Serializable {
     private Long bannerSeq;       // 배너 고유 번호 (PK)
     private String title;         // 배너 제목
     private String subtitle;      // 배너 부제목

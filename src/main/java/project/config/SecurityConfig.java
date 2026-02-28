@@ -44,9 +44,7 @@ public class SecurityConfig {
                                         // Health Check
                                         new AntPathRequestMatcher("/health", "GET"),
                                         // 관리자 로그아웃 pending (sendBeacon은 커스텀 헤더 불가)
-                                        new AntPathRequestMatcher("/admin/api/logout-pending", "POST"),
-                                        // 앱 전용 API - 앱은 CSRF 토큰을 자동 관리하지 않음
-                                        new AntPathRequestMatcher("/api/mobile/**")
+                                        new AntPathRequestMatcher("/admin/api/logout-pending", "POST")
                                 )
                                 .and()
                                 .exceptionHandling(ex -> ex

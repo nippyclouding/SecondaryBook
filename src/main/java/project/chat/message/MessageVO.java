@@ -1,14 +1,14 @@
 package project.chat.message;
 
 import lombok.Data;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-
 @Data
-public class MessageVO {
+public class MessageVO implements Serializable {
     private long chat_msg_seq;
     private long chat_room_seq;
-    private long trade_seq;
+    private Long trade_seq;
 
     private long sender_seq;
     private String chat_cont;

@@ -1,9 +1,10 @@
 package project.util.book;
 
 import lombok.Data;
+import java.io.Serializable;
 
 @Data
-public class BookVO {
+public class BookVO implements Serializable {
     private long book_seq;
     private String book_title;
     private String isbn;    // 책 식별 번호

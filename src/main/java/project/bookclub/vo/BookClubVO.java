@@ -3,6 +3,7 @@ package project.bookclub.vo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import java.io.Serializable;
 import project.util.Const;
 
 import javax.validation.constraints.Max;
@@ -13,7 +14,7 @@ import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Data
-public class BookClubVO {
+public class BookClubVO implements Serializable {
     private Long book_club_seq; // 독서모임 ID
     private Long book_club_leader_seq; // 모임장 ID, FK
 

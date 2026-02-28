@@ -1,10 +1,10 @@
 package project.util.paging;
 
 import lombok.Data;
-
+import java.io.Serializable;
 
 @Data
-public class SearchVO {
+public class SearchVO implements Serializable {
     private int page = 1; // 기본값 1페이지
     private int size = 10; // 기본값 10개씩
     private String keyword; // 검색어
