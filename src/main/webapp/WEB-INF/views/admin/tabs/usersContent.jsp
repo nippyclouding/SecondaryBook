@@ -14,6 +14,10 @@
           <i data-lucide="check-circle" class="w-3 h-3"></i> 해제
         </button>
         <div class="h-px bg-gray-100 my-1"></div>
+        <button id="btnActionDelete"
+          class="w-full text-left px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-red-600 flex items-center gap-2">
+          <i data-lucide="trash" class="w-3 h-3"></i> 삭제
+        </button>
 
       </div>
 

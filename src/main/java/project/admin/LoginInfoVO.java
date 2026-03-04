@@ -26,26 +26,9 @@ public class LoginInfoVO implements Serializable {
 
 
 
-    // ===== 로그인 시간 포맷팅 =====
-    public String getFormattedLoginDtm() {
-        return login_dtm != null ? login_dtm.format(Const.DATETIME_FORMATTER) : "-";
-    }
-
-    // ===== 로그아웃 시간 포맷팅 =====
-    public String getFormattedLogoutDtm() {
-        return logout_dtm != null ? logout_dtm.format(Const.DATETIME_FORMATTER) : "-";
-    }
-
     // ===== 접속 여부 =====
     public boolean isActive() {
         return logout_dtm == null;
     }
 
-    // ===== 접속 시간 계산 (분 단위) =====
-    public Long getSessionDurationMinutes() {
-        if (login_dtm == null || logout_dtm == null) {
-            return null;
-        }
-        return java.time.Duration.between(login_dtm, logout_dtm).toMinutes();
-    }
 }

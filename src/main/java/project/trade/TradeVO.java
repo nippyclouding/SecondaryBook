@@ -23,18 +23,21 @@ import java.util.List;
 
 @Data
 public class TradeVO implements Serializable {
-    // DB 컬럼명과 일치시킨 필드들
-    private long trade_seq;
-    private long member_seller_seq; // 추가
-    private Long member_buyer_seq;  // 추가
-    private long category_seq;      // 추가
-    private long book_info_seq;     // 추가
-    private long settlement_seq;    // 추가
-    private Long pending_buyer_seq; // 추가
+
+    // PK
+    private Long trade_seq;
+
+    // FK
+    private Long member_seller_seq; // 거래 구매자
+    private Long member_buyer_seq;  // 거래 판매자
+    private Long category_seq;      // 카테고리
+    private Long book_info_seq;     // 판매 책
+    private Long settlement_seq;    // 정산
+    private Long pending_buyer_seq; // 구매 대기자 (거래 구매 -> 안전 결제 시 거래 상태가 pending 으로 된다)
 
     @NotBlank
-    private String sale_title;      //책 제목
-    private BookStatus book_st;     // DB: book_st_enum 매핑
+    private String sale_title;      // 판매 게시글 제목
+    private BookStatus book_st;     // 판매 책 상태
     @NotBlank @Length(max = 500)
     private String sale_cont;       // 상세설명
     @NotNull @Min(0) @Max(Integer.MAX_VALUE)
@@ -52,7 +55,6 @@ public class TradeVO implements Serializable {
     private String addr_d;          // 수정: address_d -> addr_d
     private String recipient_ph;    // 구매자 전화번호
     private String recipient_nm;    // 구매자 이름
-//    private LocalDateTime crt_dtm;  // 완료일자
     private LocalDateTime upd_dtm;  // 업데이트 일자
     private PaymentType payment_type; // 거래방법
     @NotBlank

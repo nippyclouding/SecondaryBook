@@ -180,6 +180,8 @@
           searchGroups(1);
         }
 
+        window.fetchGroups = function() { searchGroups(1); };
+
         // 페이지 로드 시 자동으로 첫 페이지 데이터와 페이징 버튼을 가져옵니다.
         document.addEventListener('DOMContentLoaded', function () {
           searchGroups(1);

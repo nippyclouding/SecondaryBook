@@ -237,29 +237,41 @@ public class AdminController {
     // 4. 로그아웃
     @GetMapping("/logout")
     public String logout(HttpSession sess, HttpServletRequest request) {
-        AdminVO admin = (AdminVO) sess.getAttribute("adminSess");
-
-        // 로그아웃 기록 추가
-        if (admin != null) {
-            String logoutIp = getClientIP(request);
-            adminService.recordAdminLogout(admin.getAdmin_seq(), logoutIp);
+        try {
+            AdminVO admin = (AdminVO) sess.getAttribute("adminSess");
+            if (admin != null) {
+                String logoutIp = getClientIP(request);
+                adminService.recordAdminLogout(admin.getAdmin_seq(), logoutIp);
+            }
+        } catch (Exception e) {
+            log.error("관리자 로그아웃 기록 실패", e);
         }
-        sess.invalidate();
+        try {
+            sess.invalidate();
+        } catch (Exception e) {
+            log.warn("세션 무효화 실패", e);
+        }
         return "redirect:/";
     }
 
     @PostMapping("/logout-beacon")
     @ResponseBody
     public void logoutBeacon(HttpSession sess, HttpServletRequest request) {
-        AdminVO adminVO = (AdminVO) sess.getAttribute("adminSess");
-
-        if (adminVO != null) {
-            log.info("비콘 수신: 관리자 {} 종료 시도", adminVO.getAdmin_login_id());
-            String logoutIp = getClientIP(request);
-            adminService.recordAdminLogout(adminVO.getAdmin_seq(), logoutIp);
+        try {
+            AdminVO adminVO = (AdminVO) sess.getAttribute("adminSess");
+            if (adminVO != null) {
+                log.info("비콘 수신: 관리자 {} 종료 시도", adminVO.getAdmin_login_id());
+                String logoutIp = getClientIP(request);
+                adminService.recordAdminLogout(adminVO.getAdmin_seq(), logoutIp);
+            }
+        } catch (Exception e) {
+            log.error("비콘 로그아웃 기록 실패", e);
         }
-
-        sess.invalidate();
+        try {
+            sess.invalidate();
+        } catch (Exception e) {
+            log.warn("비콘 세션 무효화 실패", e);
+        }
         log.info("비콘 처리: 세션 무효화 완료");
     }
 

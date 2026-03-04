@@ -2,6 +2,7 @@ package project.payment;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import project.trade.TradeService;
@@ -15,6 +16,7 @@ public class SafePaymentScheduler {
 
     // 1분마다 실행
     @Scheduled(fixedRate = 60000)
+    @SchedulerLock(name = "cleanupExpiredSafePayments", lockAtMostFor = "55s", lockAtLeastFor = "50s")
     public void cleanupExpiredSafePayments() {
         int count = tradeService.resetExpiredSafePayments();
         if (count > 0) {
@@ -24,6 +26,7 @@ public class SafePaymentScheduler {
 
     // 15일 지난 구매 자동 확정 (1일 1회 실행)
     @Scheduled(cron = "0 0 0 * * *")  // 매일 자정
+    @SchedulerLock(name = "autoConfirmExpiredPurchases", lockAtMostFor = "2h", lockAtLeastFor = "1h")
     public void autoConfirmExpiredPurchases() {
         int count = tradeService.autoConfirmExpiredPurchases();
         if (count > 0) {

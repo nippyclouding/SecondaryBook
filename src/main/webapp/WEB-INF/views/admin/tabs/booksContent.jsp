@@ -194,6 +194,8 @@
             searchBooks(1);
           }
 
+          window.fetchTrades = function() { searchBooks(1); };
+
           // 페이지 로드 시 자동으로 첫 페이지 데이터와 페이징 버튼을 가져옵니다.
           document.addEventListener('DOMContentLoaded', function () {
             searchBooks(1);

@@ -6,6 +6,7 @@ import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ public class SettlementScheduler {
 
     // 매일 새벽 3시에 정산 배치 실행
     @Scheduled(cron = "0 0 3 * * *")
+    @SchedulerLock(name = "settlementJob", lockAtMostFor = "2h", lockAtLeastFor = "1h")
     public void processSettlements() {
         log.info("정산 배치 시작");
         try {

@@ -308,7 +308,7 @@
     // 탭별 데이터 로드
     if(viewName === 'users' && window.fetchUsers) fetchUsers();
     if(viewName === 'books' && window.fetchTrades) fetchTrades();
-    if(viewName === 'safePayList' && window.fetchGroups) fetchGroups();
+    if(viewName === 'safePayList' && window.searchPay) searchPay(1);
     if(viewName === 'groups' && window.fetchGroups) fetchGroups();
     if(viewName === 'banner' && window.loadBannerList) {
       window.loadBannerList(); // 배너 리스트 로드

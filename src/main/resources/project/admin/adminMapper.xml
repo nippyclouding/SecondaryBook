@@ -453,12 +453,14 @@
         SET LOGOUT_DTM = CURRENT_TIMESTAMP
         , LOGOUT_IP = #{logout_ip}
         WHERE LOGIN_INFO_SEQ = (
-        SELECT LOGIN_INFO_SEQ
-        FROM login_info
-        WHERE ADMIN_SEQ = #{admin_seq}
-        AND LOGOUT_DTM IS NULL
-        ORDER BY LOGIN_DTM DESC
-        LIMIT 1
+            SELECT t.LOGIN_INFO_SEQ FROM (
+                SELECT LOGIN_INFO_SEQ
+                FROM login_info
+                WHERE ADMIN_SEQ = #{admin_seq}
+                AND LOGOUT_DTM IS NULL
+                ORDER BY LOGIN_DTM DESC
+                LIMIT 1
+            ) t
         )
     </update>
 
@@ -472,12 +474,14 @@
         SET LOGOUT_DTM = CURRENT_TIMESTAMP
         , LOGOUT_IP = #{logout_ip}
         WHERE LOGIN_INFO_SEQ = (
-        SELECT LOGIN_INFO_SEQ
-        FROM login_info
-        WHERE MEMBER_SEQ = #{member_seq}
-        AND LOGOUT_DTM IS NULL
-        ORDER BY LOGIN_DTM DESC
-        LIMIT 1
+            SELECT t.LOGIN_INFO_SEQ FROM (
+                SELECT LOGIN_INFO_SEQ
+                FROM login_info
+                WHERE MEMBER_SEQ = #{member_seq}
+                AND LOGOUT_DTM IS NULL
+                ORDER BY LOGIN_DTM DESC
+                LIMIT 1
+            ) t
         )
     </update>
 

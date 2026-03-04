@@ -275,8 +275,10 @@
           function notices_resetSearch() {
             document.getElementById('noticesSearchType').value = 'all';
             document.getElementById('noticesSearchKeyword').value = '';
-            document.getElementById('statusFilter').value = 'all';
-            document.getElementById('importantFilter').value = 'all';
+            const sfEl = document.getElementById('statusFilter');
+            if (sfEl) sfEl.value = 'all';
+            const ifEl = document.getElementById('importantFilter');
+            if (ifEl) ifEl.value = 'all';
             searchNotices(1);
           }
 

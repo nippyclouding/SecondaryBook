@@ -343,6 +343,18 @@
 			<artifactId>spring-batch-core</artifactId>
 			<version>4.3.9</version>
 		</dependency>
+
+		<!-- ShedLock: 다중 서버 환경에서 스케줄러 중복 실행 방지 -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+			<version>4.44.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-redis-spring</artifactId>
+			<version>4.44.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

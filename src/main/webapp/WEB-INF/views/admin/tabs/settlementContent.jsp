@@ -33,7 +33,7 @@
     <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
       <div>
         <h3 class="font-bold text-lg text-gray-900">이체 대기 목록</h3>
-        <p class="text-xs text-gray-500 mt-0.5">배치 처리 완료 후 실제 이체가 필요한 건 — 총 <span id="stl-total-amount" class="font-bold text-primary-600">-</span>원</p>
+        <p class="text-xs text-gray-500 mt-0.5">배치 처리 완료 후 실제 이체가 필요한 건 — 총 <span id="stl-total-amount" class="font-bold text-primary-600">-</span></p>
       </div>
       <button onclick="loadSettlementData()" class="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
         <i data-lucide="refresh-cw" class="w-4 h-4"></i> 새로고침
@@ -156,15 +156,15 @@
           const holderNm = item.account_holder_nm || '-';
           return `
             <tr class="hover:bg-gray-50 transition">
-              <td class="px-5 py-4 text-sm text-gray-800 font-medium">${item.sale_title || '-'}</td>
-              <td class="px-5 py-4 text-sm text-gray-600">${item.member_seller_nm || '-'}</td>
-              <td class="px-5 py-4 text-sm text-gray-600">${bankName}</td>
-              <td class="px-5 py-4 text-sm font-mono text-gray-800">${accountNo}</td>
-              <td class="px-5 py-4 text-sm text-gray-600">${holderNm}</td>
-              <td class="px-5 py-4 text-sm font-bold text-right text-primary-700">${fmtMoney(item.settlement_amount)}</td>
-              <td class="px-5 py-4 text-sm text-gray-500">${fmtDate(item.settled_dtm)}</td>
+              <td class="px-5 py-4 text-sm text-gray-800 font-medium">\${item.sale_title || '-'}</td>
+              <td class="px-5 py-4 text-sm text-gray-600">\${item.member_seller_nm || '-'}</td>
+              <td class="px-5 py-4 text-sm text-gray-600">\${bankName}</td>
+              <td class="px-5 py-4 text-sm font-mono text-gray-800">\${accountNo}</td>
+              <td class="px-5 py-4 text-sm text-gray-600">\${holderNm}</td>
+              <td class="px-5 py-4 text-sm font-bold text-right text-primary-700">\${fmtMoney(item.settlement_amount)}</td>
+              <td class="px-5 py-4 text-sm text-gray-500">\${fmtDate(item.settled_dtm)}</td>
               <td class="px-5 py-4 text-center">
-                <button onclick="confirmTransfer(${item.settlement_seq}, this)"
+                <button onclick="confirmTransfer(\${item.settlement_seq}, this)"
                   class="px-3 py-1.5 text-xs font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
                   이체 완료
                 </button>
@@ -188,12 +188,12 @@
         }
         tbody.innerHTML = data.list.map(item => `
           <tr class="hover:bg-orange-50/30 transition">
-            <td class="px-5 py-4 text-sm text-gray-800 font-medium">${item.sale_title || '-'}</td>
-            <td class="px-5 py-4 text-sm text-gray-600">${item.member_seller_nm || '-'}</td>
-            <td class="px-5 py-4 text-sm font-bold text-right text-orange-600">${fmtMoney(item.settlement_amount)}</td>
-            <td class="px-5 py-4 text-sm text-gray-500">${fmtDate(item.request_dtm)}</td>
+            <td class="px-5 py-4 text-sm text-gray-800 font-medium">\${item.sale_title || '-'}</td>
+            <td class="px-5 py-4 text-sm text-gray-600">\${item.member_seller_nm || '-'}</td>
+            <td class="px-5 py-4 text-sm font-bold text-right text-orange-600">\${fmtMoney(item.settlement_amount)}</td>
+            <td class="px-5 py-4 text-sm text-gray-500">\${fmtDate(item.request_dtm)}</td>
             <td class="px-5 py-4 text-center">
-              <button onclick="resetSettlement(${item.settlement_seq}, this)"
+              <button onclick="resetSettlement(\${item.settlement_seq}, this)"
                 class="px-3 py-1.5 text-xs font-bold bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
                 재처리 설정
               </button>
