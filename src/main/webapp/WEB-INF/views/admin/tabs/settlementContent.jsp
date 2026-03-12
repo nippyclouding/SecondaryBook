@@ -5,7 +5,7 @@
 <div class="space-y-6">
 
   <%-- ===== 요약 카드 ===== --%>
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">관리자 잔액</p>
       <p id="stl-admin-balance" class="text-2xl font-black text-gray-900 mb-3">-</p>
@@ -15,17 +15,51 @@
       </a>
     </div>
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">정산 신청 (REQUESTED)</p>
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">정산 신청 대기</p>
       <p id="stl-requested-count" class="text-2xl font-black text-primary-600">-</p>
+      <p class="text-xs text-gray-400 mt-1">배치 처리 전</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-green-100 shadow-sm p-6 bg-green-50/30">
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">정산 완료</p>
+      <p id="stl-completed-count" class="text-2xl font-black text-green-600">-</p>
+      <p class="text-xs text-gray-400 mt-1">배치 처리 완료</p>
     </div>
     <div class="bg-white rounded-2xl border border-blue-100 shadow-sm p-6 bg-blue-50/30">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">이체 대기 건수</p>
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">이체 대기</p>
       <p id="stl-pending-count" class="text-2xl font-black text-blue-600">-</p>
+      <p class="text-xs text-gray-400 mt-1">수동 이체 필요</p>
     </div>
     <div class="bg-white rounded-2xl border border-orange-100 shadow-sm p-6 bg-orange-50/30">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">잔액 부족 건수</p>
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">잔액 부족</p>
       <p id="stl-insufficient-count" class="text-2xl font-black text-orange-500">-</p>
+      <p class="text-xs text-gray-400 mt-1">재처리 필요</p>
     </div>
+  </div>
+
+  <%-- ===== 정산 신청 목록 (REQUESTED) ===== --%>
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+      <h3 class="font-bold text-lg text-gray-900">정산 신청 목록</h3>
+      <p class="text-xs text-gray-500 mt-0.5">판매자가 정산 신청 완료 — 매일 새벽 3시 배치 처리 대기 중인 건</p>
+    </div>
+    <table class="w-full">
+      <thead class="bg-gray-50 text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+        <tr>
+          <th class="px-5 py-4 text-left">상품명</th>
+          <th class="px-5 py-4 text-left">판매자</th>
+          <th class="px-5 py-4 text-right">판매가</th>
+          <th class="px-5 py-4 text-right">배송비</th>
+          <th class="px-5 py-4 text-right">수수료(1%)</th>
+          <th class="px-5 py-4 text-right">정산금액</th>
+          <th class="px-5 py-4 text-left">신청일</th>
+        </tr>
+      </thead>
+      <tbody id="stl-requested-tbody" class="divide-y divide-gray-50">
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center text-gray-400 text-sm">데이터를 불러오는 중...</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <%-- ===== 이체 대기 목록 ===== --%>
@@ -56,6 +90,31 @@
       <tbody id="stl-transfer-pending-tbody" class="divide-y divide-gray-50">
         <tr>
           <td colspan="8" class="px-6 py-12 text-center text-gray-400 text-sm">데이터를 불러오는 중...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <%-- ===== 정산 완료 내역 (COMPLETED 전체) ===== --%>
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+      <h3 class="font-bold text-lg text-gray-900">정산 완료 내역</h3>
+      <p class="text-xs text-gray-500 mt-0.5">배치 처리까지 완료된 전체 건 — 이체 확인 여부 포함</p>
+    </div>
+    <table class="w-full">
+      <thead class="bg-gray-50 text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+        <tr>
+          <th class="px-5 py-4 text-left">상품명</th>
+          <th class="px-5 py-4 text-left">판매자</th>
+          <th class="px-5 py-4 text-right">정산금액</th>
+          <th class="px-5 py-4 text-left">신청일</th>
+          <th class="px-5 py-4 text-left">배치 완료일</th>
+          <th class="px-5 py-4 text-center">이체 확인</th>
+        </tr>
+      </thead>
+      <tbody id="stl-completed-tbody" class="divide-y divide-gray-50">
+        <tr>
+          <td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">데이터를 불러오는 중...</td>
         </tr>
       </tbody>
     </table>
@@ -109,7 +168,9 @@
 
   function loadSettlementData() {
     loadSummary();
+    loadRequested();
     loadTransferPending();
+    loadCompleted();
     loadInsufficient();
   }
 
@@ -120,6 +181,14 @@
         if (data.success) {
           document.getElementById('stl-requested-count').textContent = (data.count || 0) + '건';
           document.getElementById('stl-admin-balance').textContent = fmtMoney(data.adminBalance);
+        }
+      }).catch(() => {});
+
+    adminFetch('/admin/api/settlement/completed')
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('stl-completed-count').textContent = (data.count || 0) + '건';
         }
       }).catch(() => {});
 
@@ -139,6 +208,58 @@
           document.getElementById('stl-insufficient-count').textContent = (data.count || 0) + '건';
         }
       }).catch(() => {});
+  }
+
+  function loadRequested() {
+    const tbody = document.getElementById('stl-requested-tbody');
+    adminFetch('/admin/api/settlement/requested')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success || !data.list || data.list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-400 text-sm">배치 처리 대기 중인 정산 신청 건이 없습니다.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.list.map(item => `
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-5 py-4 text-sm text-gray-800 font-medium">\${item.sale_title || '-'}</td>
+            <td class="px-5 py-4 text-sm text-gray-600">\${item.member_seller_nm || '-'}</td>
+            <td class="px-5 py-4 text-sm text-right text-gray-700">\${fmtMoney(item.sale_price)}</td>
+            <td class="px-5 py-4 text-sm text-right text-gray-700">\${fmtMoney(item.delivery_cost)}</td>
+            <td class="px-5 py-4 text-sm text-right text-red-500">-\${fmtMoney(item.commission)}</td>
+            <td class="px-5 py-4 text-sm font-bold text-right text-primary-700">\${fmtMoney(item.settlement_amount)}</td>
+            <td class="px-5 py-4 text-sm text-gray-500">\${fmtDate(item.request_dtm)}</td>
+          </tr>`).join('');
+      }).catch(() => {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-red-400 text-sm">데이터 로드 실패</td></tr>';
+      });
+  }
+
+  function loadCompleted() {
+    const tbody = document.getElementById('stl-completed-tbody');
+    adminFetch('/admin/api/settlement/completed')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success || !data.list || data.list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">정산 완료 내역이 없습니다.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.list.map(item => {
+          const transferBadge = item.transfer_confirmed_yn
+            ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">이체 완료</span>'
+            : '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">이체 대기</span>';
+          return `
+            <tr class="hover:bg-gray-50 transition">
+              <td class="px-5 py-4 text-sm text-gray-800 font-medium">\${item.sale_title || '-'}</td>
+              <td class="px-5 py-4 text-sm text-gray-600">\${item.member_seller_nm || '-'}</td>
+              <td class="px-5 py-4 text-sm font-bold text-right text-green-700">\${fmtMoney(item.settlement_amount)}</td>
+              <td class="px-5 py-4 text-sm text-gray-500">\${fmtDate(item.request_dtm)}</td>
+              <td class="px-5 py-4 text-sm text-gray-500">\${fmtDate(item.settled_dtm)}</td>
+              <td class="px-5 py-4 text-center">\${transferBadge}</td>
+            </tr>`;
+        }).join('');
+      }).catch(() => {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-red-400 text-sm">데이터 로드 실패</td></tr>';
+      });
   }
 
   function loadTransferPending() {

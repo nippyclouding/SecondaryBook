@@ -32,9 +32,15 @@ public class SecurityConfig {
                                 .authorizeRequests()
                                 .anyRequest().permitAll()
                                 .and()
-                                // SockJS iframe 허용 (채팅 WebSocket용)
+                                // 보안 헤더 설정
                                 .headers()
-                                .frameOptions().sameOrigin()
+                                .frameOptions().sameOrigin()           // SockJS iframe 허용 (채팅 WebSocket용)
+                                .contentTypeOptions().and()            // X-Content-Type-Options: nosniff (MIME 스니핑 방지)
+                                .xssProtection().block(true).and()     // X-XSS-Protection: 1; mode=block
+                                .httpStrictTransportSecurity()
+                                    .includeSubDomains(true)
+                                    .maxAgeInSeconds(31536000)         // HSTS: 1년, HTTPS 강제
+                                    .and()
                                 .and()
                                 // CSRF: 전역 적용, 특정 경로만 제외
                                 .csrf()

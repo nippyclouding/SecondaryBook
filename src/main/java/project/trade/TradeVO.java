@@ -35,35 +35,33 @@ public class TradeVO implements Serializable {
     private Long settlement_seq;    // 정산
     private Long pending_buyer_seq; // 구매 대기자 (거래 구매 -> 안전 결제 시 거래 상태가 pending 으로 된다)
 
-    @NotBlank
-    private String sale_title;      // 판매 게시글 제목
-    private BookStatus book_st;     // 판매 책 상태
-    @NotBlank @Length(max = 500)
-    private String sale_cont;       // 상세설명
-    @NotNull @Min(0) @Max(Integer.MAX_VALUE)
-    private Integer sale_price;         // 판매가격
-    @NotNull @Min(0) @Max(Integer.MAX_VALUE)
-    private Integer delivery_cost; // 배송비
-    private String sale_rg;         // 수정: book_sale_region -> sale_rg
-    private SaleStatus sale_st;     // DB: sale_st_enum 매핑
-    private LocalDateTime sale_st_dtm;  // 상품상태 변경 시간
-    private long views;             // 조회수
-    private long wish_cnt;          // 찜수
+
+    private String sale_title;              // 판매 게시글 제목
+    private BookStatus book_st;             // 판매 책 상태
+    private String sale_cont;               // 상세 설명
+    private Integer sale_price;             // 판매 가격
+    private Integer delivery_cost;          // 배송비
+    private String sale_rg;                 // 판매 지역
+    private SaleStatus sale_st;             // 판매 상태 (판매중, 예약, 완료)
+
+    private LocalDateTime sale_st_dtm;      // 상품상태 변경 시간
     private LocalDateTime book_sale_dtm;    //판매완료 시간
-    private String post_no;         // 우편번호
-    private String addr_h;          // 수정: address_h -> addr_h
-    private String addr_d;          // 수정: address_d -> addr_d
-    private String recipient_ph;    // 구매자 전화번호
-    private String recipient_nm;    // 구매자 이름
-    private LocalDateTime upd_dtm;  // 업데이트 일자
-    private PaymentType payment_type; // 거래방법
-    @NotBlank
+    private LocalDateTime upd_dtm;          // 업데이트 일자
+
+    private String post_no;                 // 우편번호
+    private String addr_h;                  // 주소
+    private String addr_d;                  // 상세 주소
+    private String recipient_ph;            // 구매자 전화번호
+    private String recipient_nm;            // 구매자 이름
+
+    private PaymentType payment_type;       // 거래방법 (안전 거래 - 토스페이, 일반 거래 - 계좌)
+
     private String category_nm; // 카테고리 이름
 
     private SettlementStatus settlement_st; // 정산 상태: NONE, READY, REQUESTED, COMPLETED
     // Book 관련 (Join 결과 매핑용)
     private String isbn;            // 책 고유번호
-    @NotBlank
+
     private String book_title;      // 책 제목
     private String book_author;     // 저자
     private String book_publisher;  // 출판사
@@ -101,7 +99,7 @@ public class TradeVO implements Serializable {
                     // book_author != null && !book_author.equals("") &&
                     // book_publisher != null && !book_publisher.equals("") &&
                     category_nm != null && !category_nm.equals("") &&
-                    sale_cont != null && !sale_cont.equals("") && !(sale_cont.length() >= 500)) {
+                    sale_cont != null && !sale_cont.equals("") && sale_cont.length() < 500) {
                 result = true;
             }
         return result;

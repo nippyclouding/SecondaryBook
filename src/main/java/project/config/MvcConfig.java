@@ -1,11 +1,16 @@
 package project.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -14,6 +19,7 @@ import org.springframework.web.multipart.support.StandardServletMultipartResolve
 import org.springframework.web.servlet.config.annotation.*;
 import com.zaxxer.hikari.HikariDataSource;
 
+import java.util.List;
 import java.util.Properties;
 
 @Configuration
@@ -41,6 +47,16 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Value("${file.dir}")
     private String uploadPath;
+
+    // Jackson: LocalDateTime을 ISO 문자열로 직렬화
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        ObjectMapper om = new ObjectMapper();
+        om.registerModule(new JavaTimeModule());
+        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        converters.removeIf(c -> c instanceof MappingJackson2HttpMessageConverter);
+        converters.add(0, new MappingJackson2HttpMessageConverter(om));
+    }
 
     // JSP ViewResolver
     @Override

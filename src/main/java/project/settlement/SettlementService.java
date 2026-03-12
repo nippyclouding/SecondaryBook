@@ -150,12 +150,17 @@ public class SettlementService {
         if (seller != null && seller.getMember_email() != null) {
             SettlementVO settlement = settlementMapper.findBySettlementSeq(settlement_seq);
             int amount = settlement != null ? settlement.getSettlement_amount() : 0;
-            mailService.sendInsufficientBalanceEmail(
-                    seller.getMember_email(),
-                    seller.getMember_nicknm(),
-                    amount,
-                    trade_seq
-            );
+            try {
+                mailService.sendInsufficientBalanceEmail(
+                        seller.getMember_email(),
+                        seller.getMember_nicknm(),
+                        amount,
+                        trade_seq
+                );
+            } catch (Exception e) {
+                log.warn("잔액 부족 이메일 발송 실패 (정산 상태 변경은 유지됨): settlement_seq={}, email={}",
+                        settlement_seq, seller.getMember_email(), e);
+            }
         }
     }
 

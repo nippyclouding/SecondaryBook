@@ -97,6 +97,10 @@ public class RedisCacheConfig {
         cacheConfigs.put("tradeList",
                 defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
+        // 상품 개수: 5분 (tradeList와 TTL 일치, 불일치 방지)
+        cacheConfigs.put("tradeCount",
+                defaultConfig.entryTtl(Duration.ofMinutes(5)));
+
         // 독서모임 상세: 10분
         cacheConfigs.put("bookClub",
                 defaultConfig.entryTtl(Duration.ofMinutes(10)));

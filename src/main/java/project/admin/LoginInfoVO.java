@@ -31,4 +31,12 @@ public class LoginInfoVO implements Serializable {
         return logout_dtm == null;
     }
 
+    public String getFormattedLoginDtm() {
+        return login_dtm != null ? login_dtm.format(Const.DATETIME_FORMATTER) : null;
+    }
+
+    public String getFormattedLogoutDtm() {
+        return logout_dtm != null ? logout_dtm.format(Const.DATETIME_FORMATTER) : null;
+    }
+
 }

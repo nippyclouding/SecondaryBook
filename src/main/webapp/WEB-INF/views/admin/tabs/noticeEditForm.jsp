@@ -1,45 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <sec:csrfMetaTags />
-
-    <title>공지사항 수정</title>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Tailwind Config -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50">
-<!-- ✅ 여기까지 추가 -->
 
 <div class="max-w-4xl mx-auto py-8">
     <!-- Page Title -->
@@ -251,15 +211,5 @@ document.getElementById('noticeEditForm').addEventListener('submit', function(e)
         alert('수정 중 오류가 발생했습니다: ' + error.message);
     });
 });
-(function() {
-      setInterval(function() {
-          fetch('/admin/api/logout-pending', {
-              method: 'POST',
-              credentials: 'same-origin',
-              keepalive: true
-          });
-      }, 500);
-  })();
+
 </script>
-</body>
-</html>

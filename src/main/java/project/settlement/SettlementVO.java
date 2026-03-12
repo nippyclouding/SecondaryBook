@@ -1,6 +1,7 @@
 package project.settlement;
 
 import lombok.Data;
+import lombok.ToString;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,6 +36,7 @@ public class SettlementVO implements Serializable {
 
     // JOIN 조회용 (배치 처리 + 이체 목록)
     private String bank_code;          // 은행코드
-    private String bank_account_no;    // 계좌번호
+    @ToString.Exclude
+    private String bank_account_no;    // 계좌번호 (로그 노출 방지)
     private String account_holder_nm;  // 예금주명
 }
