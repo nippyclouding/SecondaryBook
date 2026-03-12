@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="spring.batch.member.MemberMapper">
+
+    <select id="findByMemberSeq" resultType="spring.batch.member.MemberVO">
+        SELECT MEMBER_SEQ
+             , MEMBER_EMAIL
+             , MEMBER_NICKNM
+          FROM member_info
+         WHERE MEMBER_SEQ = #{member_seq}
+    </select>
+
+</mapper>
