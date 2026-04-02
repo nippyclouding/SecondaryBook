@@ -186,6 +186,19 @@ YES24, 알라딘의 특징 : 높은 가격과 매입 제한
 
 ### ERD
 
+옅은 갈색 : 관리자 관련 테이블
+
+노란색 : 회원 관련 테이블
+
+초록색 : 독서 모임 관련 테이블
+
+자주색 : 정산 테이블
+
+짙은 갈색 : 거래 관련 테이블
+
+보라색 : 1:1 채팅 테이블
+
+검정색 : 배치 테이블
 
 <img width="4540" height="3722" alt="secondarybook_erd" src="https://github.com/user-attachments/assets/540f46ad-a383-4c65-90fa-411dedc1f396" />
 
