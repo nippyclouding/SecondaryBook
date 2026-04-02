@@ -291,6 +291,7 @@ ALB가 유저A를 EC2 #1로, 유저B를 EC2 #2로 라우팅하면, `SimpMessagin
                     EC2 #1 SUBSCRIBE → EC2 #1의 WebSocket 클라이언트에게 전달
                     EC2 #2 SUBSCRIBE → 유저B 실시간 수신 
 ```
+<img width="685" height="552" alt="pub sub" src="https://github.com/user-attachments/assets/54769b74-7bdf-49f6-8426-474b48560f98" />
 
 ---
 
