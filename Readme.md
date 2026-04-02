@@ -1,4 +1,4 @@
-<img width="966" height="518" alt="무제 2" src="https://github.com/user-attachments/assets/2d05537c-024d-4d5f-88f5-cef925419191" /># SecondaryBook - 중고책 거래 및 독서 모임 플랫폼
+# SecondaryBook - 중고책 거래 및 독서 모임 플랫폼
 
 ## 프로젝트 개요
 
