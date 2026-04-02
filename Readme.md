@@ -22,6 +22,7 @@ YES24, 알라딘의 특징 : 높은 가격과 매입 제한
 
 독서의 연결성 : 우리 플랫폼을 이용하는 사람들은 독서를 즐길 것으로 예상되기에 "독서 모임" 커뮤니티를 기획 및 개발하였습니다.
 
+
 ---
 
 ### 모듈 구성
@@ -180,6 +181,13 @@ YES24, 알라딘의 특징 : 높은 가격과 매입 제한
 
 
 
+
+---
+
+### ERD
+
+
+<img width="4540" height="3722" alt="secondarybook_erd" src="https://github.com/user-attachments/assets/540f46ad-a383-4c65-90fa-411dedc1f396" />
 
 ---
 
