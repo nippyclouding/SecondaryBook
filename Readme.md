@@ -1,4 +1,4 @@
-# SecondaryBook - 중고책 거래 및 독서 모임 플랫폼
+<img width="966" height="518" alt="무제 2" src="https://github.com/user-attachments/assets/2d05537c-024d-4d5f-88f5-cef925419191" /># SecondaryBook - 중고책 거래 및 독서 모임 플랫폼
 
 ## 프로젝트 개요
 
@@ -7,14 +7,15 @@
 
 우리 플랫폼은 중고책 시장의 특징인 사기 문제를 "안전 결제" 개념을 도입하여 해결합니다.
 
-<img width="942" height="494" alt="무제 2" src="https://github.com/user-attachments/assets/2323d2c0-7950-4b70-be8a-c8bff5d2b11e" />
+<img width="993" height="522" alt="무제 2" src="https://github.com/user-attachments/assets/9ae228a7-9680-4cf4-a7e3-28de80e5fbf1" />
+
 
 당근, 중고나라의 특징 : 온라인 중고 거래 시 사기 문제 발생 가능 & 중고품 상태 불확실
 
 YES24, 알라딘의 특징 : 높은 가격과 매입 제한
 
 
-<img width="953" height="457" alt="무제" src="https://github.com/user-attachments/assets/cebd5d23-0b16-41e3-95da-b42713ba6b9e" />
+
 
 등록의 정확성 : Kakao 도서 API를 이용하여 구매자는 높은 정확도의 정보로 책에 대한 데이터를 확인할 수 있고, 판매자는 등록 시 한 번의 클릭으로 정확한 데이터를 불러올 수 있습니다.
 
@@ -308,7 +309,8 @@ ALB가 유저A를 EC2 #1로, 유저B를 EC2 #2로 라우팅하면, `SimpMessagin
 
 캐싱 도입 - DB 부하 분산 절감
 
-<img width="954" height="513" alt="ㅁㄴㅇㄹㅁㄴㅇㄹ" src="https://github.com/user-attachments/assets/9e9098e9-5807-48c0-898c-de0ac7c7952c" />
+<img width="966" height="518" alt="무제 2" src="https://github.com/user-attachments/assets/d808b474-df00-4534-86dd-4e0e565a81ff" />
+
 
 ---
 
