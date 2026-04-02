@@ -1,0 +1,612 @@
+/* 독서모임 상세 페이지 전용 스타일 */
+
+/* 페이지 기본 레이아웃 */
+.bc-page-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+}
+
+/* 한 덩어리 카드 래퍼 */
+.bc-detail-shell {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 배너(히어로) 영역 */
+.bc-hero-section {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    overflow: hidden;
+}
+
+.bc-hero-background {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+}
+
+.bc-hero-gradient {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 배너 위 오버레이 */
+.bc-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* 배너 상단 버튼(뒤로가기, 찜) */
+.bc-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.bc-back-btn,
+.bc-wish-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+}
+
+.bc-back-btn:hover,
+.bc-wish-btn:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.bc-back-btn svg,
+.bc-wish-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.bc-wish-btn svg {
+    color: #ff5a5f;
+    transition: transform 0.2s;
+}
+
+.bc-wish-btn.wished svg {
+    transform: scale(1.1);
+}
+
+/* 배너 하단 정보 */
+.bc-hero-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bc-region-badge {
+    display: inline-block;
+    background: #4299e1;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    width: fit-content;
+}
+
+.bc-hero-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.bc-hero-meta {
+    display: flex;
+    gap: 16px;
+    color: white;
+    font-size: 14px;
+}
+
+.bc-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 탭 네비게이션 */
+.bc-tabs-wrapper {
+    background: transparent;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.bc-tabs-nav {
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+}
+
+.bc-tab-link {
+    flex : 1;
+    text-align: center;
+    padding: 16px 0;
+    color: #718096;
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.bc-tab-link:hover {
+    color: #2d3748;
+    background: #f7fafc;
+}
+
+.bc-tab-link.active {
+    color: #3182ce;
+    border-bottom-color: #3182ce;
+}
+.bc-tab-link.active::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;     /* 핵심: 탭 영역 전체 */
+  bottom: -1px;
+  height: 2px;
+  background: #2563eb;
+}
+
+/* 콘텐츠 영역 */
+.bc-content-wrapper {
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #f8fafc;
+}
+
+/* 카드 공통 스타일 */
+.bc-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+}
+
+.bc-card-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2d3748;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bc-card-title svg {
+    width: 20px;
+    height: 20px;
+    color: #4299e1;
+}
+
+/* 모임 소개 카드 */
+.bc-intro-text {
+    color: #4a5568;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+}
+
+.bc-schedule-box {
+    background: #ebf8ff;
+    border-left: 4px solid #4299e1;
+    padding: 12px 16px;
+    border-radius: 4px;
+}
+
+.bc-schedule-label {
+    font-size: 13px;
+    color: #2c5282;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.bc-schedule-text {
+    color: #2d3748;
+    font-weight: 500;
+}
+
+/* 멤버 카드 */
+.bc-members-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.bc-member-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.bc-member-item:hover {
+    background: #f7fafc;
+}
+
+.bc-member-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #718096;
+    position: relative;
+}
+
+.bc-leader-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: #4299e1;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.bc-member-name {
+    font-size: 13px;
+    color: #2d3748;
+    font-weight: 500;
+    text-align: center;
+}
+
+.bc-member-role {
+    font-size: 11px;
+    color: #718096;
+}
+
+/* 하단 고정 영역 */
+.bc-bottom-bar {
+    position: static;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: none;
+    padding: 16px 20px;
+    z-index: 100;
+}
+
+.bc-bottom-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bc-bottom-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bc-bottom-label {
+    font-size: 12px;
+    color: #718096;
+}
+
+.bc-bottom-count {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.bc-bottom-count .current {
+    color: #4299e1;
+}
+
+.bc-bottom-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* 버튼 스타일 */
+/*
+.bc-btn {
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+*/
+.bc-btn {
+    width: 160px;
+    height: 48px;
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bc-btn-primary {
+    background: #4299e1;
+    color: white;
+}
+
+.bc-btn-primary:hover {
+    background: #3182ce;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.bc-btn-secondary {
+    background: #718096;
+    color: white;
+}
+
+.bc-btn-secondary:hover {
+    background: #4a5568;
+}
+
+.bc-btn-danger {
+    background: #fc8181;
+    color: white;
+}
+
+.bc-btn-danger:hover {
+    background: #f56565;
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+}
+
+.bc-btn-outline {
+    background: white;
+    color: #4299e1;
+    border: 2px solid #4299e1;
+}
+
+.bc-btn-outline:hover {
+    background: #ebf8ff;
+}
+
+.bc-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bc-btn:disabled:hover {
+    box-shadow: none;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .bc-hero-section {
+        height: 280px;
+    }
+
+    .bc-hero-title {
+        font-size: 24px;
+    }
+
+    .bc-content-wrapper {
+        padding: 16px;
+    }
+
+    .bc-members-grid {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: auto;
+    }
+
+    .bc-bottom-content {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .bc-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* 에러 메시지 */
+.bc-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: #e53e3e;
+}
+
+/* 댓글 수 뱃지 */
+.bc-board-comment-count {
+    color: #4299e1;
+    font-weight: 500;
+}
+
+/* ===== 가입 신청 모달 ===== */
+.bc-apply-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.bc-apply-modal-active {
+    display: flex;
+}
+
+.bc-apply-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.bc-apply-modal-container {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    width: 90%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.bc-apply-modal-header {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 4px 0;
+}
+
+.bc-apply-modal-club-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: #3182ce;
+    margin: 0 0 16px 0;
+}
+
+.bc-apply-modal-desc {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #4a5568;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.bc-apply-modal-form {
+    margin-bottom: 20px;
+}
+
+.bc-apply-modal-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.bc-apply-modal-textarea {
+    width: 100%;
+    height: 100px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #2d3748;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    box-sizing: border-box;
+}
+
+.bc-apply-modal-textarea::placeholder {
+    color: #a0aec0;
+}
+
+.bc-apply-modal-textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.4);
+}
+
+.bc-apply-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.bc-apply-btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.bc-apply-btn-cancel {
+    background: #fff;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.bc-apply-btn-cancel:hover {
+    background: #f7fafc;
+}
+
+.bc-apply-btn-submit {
+    background: #3182ce;
+    color: #fff;
+}
+
+.bc-apply-btn-submit:hover {
+    background: #2b6cb0;
+}
+
+.bc-apply-btn-submit:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+}

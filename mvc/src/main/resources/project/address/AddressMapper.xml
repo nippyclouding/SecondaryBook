@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.address.AddressMapper">
+
+    <select id="selectAddressList" parameterType="long" resultType="project.address.AddressVO">
+        SELECT *
+        FROM address_info
+        WHERE MEMBER_SEQ = #{member_seq}
+        ORDER BY DEFAULT_YN DESC, ADDR_SEQ DESC
+    </select>
+
+    <insert id="insertAddress" parameterType="project.address.AddressVO">
+        INSERT INTO address_info (
+            MEMBER_SEQ, ADDR_NM, POST_NO, ADDR_H, ADDR_D, DEFAULT_YN
+        ) VALUES (
+                     #{member_seq}, #{addr_nm}, #{post_no}, #{addr_h}, #{addr_d}, #{default_yn}
+                 )
+    </insert>
+
+    <delete id="deleteAddress">
+        DELETE FROM address_info
+        WHERE ADDR_SEQ = #{addr_seq}
+          AND MEMBER_SEQ = #{member_seq}
+    </delete>
+
+    <update id="resetDefaultAddress" parameterType="long">
+        UPDATE address_info
+        SET DEFAULT_YN = 0
+        WHERE MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <update id="setDefaultAddress">
+        UPDATE address_info
+        SET DEFAULT_YN = 1
+        WHERE ADDR_SEQ = #{addr_seq}
+          AND MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <update id="updateAddress" parameterType="project.address.AddressVO">
+        UPDATE address_info
+        SET ADDR_NM = #{addr_nm}
+          , POST_NO = #{post_no}
+          , ADDR_H = #{addr_h}
+          , ADDR_D = #{addr_d}
+          , DEFAULT_YN = #{default_yn}
+        WHERE ADDR_SEQ = #{addr_seq}
+          AND MEMBER_SEQ = #{member_seq}
+    </update>
+
+    <select id="countAddress" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM address_info
+        WHERE MEMBER_SEQ = #{member_seq}
+    </select>
+</mapper>

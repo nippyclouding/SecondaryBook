@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <!-- SQL 로그 - 실행된 SQL만 보기 -->
+    <logger name="jdbc.sqlonly" level="OFF" />
+    <logger name="jdbc.sqltiming" level="INFO" />  <!-- SQL + 실행 시간 -->
+    <logger name="jdbc.resultsettable" level="OFF" />  <!-- 결과 테이블 끄기 -->
+    <logger name="jdbc.audit" level="OFF" />  <!-- 상세 audit 로그 끄기 -->
+
+    <!-- MyBatis 로그 -->
+    <logger name="project.trade" level="INFO" />
+
+    <!-- BookClub 로그 (디버깅용) -->
+    <logger name="project.bookclub" level="DEBUG" />
+
+    <!-- Spring 로그 -->
+    <logger name="org.springframework" level="DEBUG" />
+    <logger name="org.springframework.web" level="DEBUG" />
+    <logger name="project" level="DEBUG" />
+
+    <!-- HikariCP 로그 끄기 -->
+    <logger name="com.zaxxer.hikari" level="WARN" />
+    <logger name="com.zaxxer.hikari.HikariDataSource" level="WARN" />
+    <logger name="com.zaxxer.hikari.pool" level="WARN" />
+
+    <!-- JDBC 커넥션 로그 끄기 -->
+    <logger name="jdbc.connection" level="OFF" />
+    <logger name="jdbc.audit" level="OFF" />
+
+    <logger name="org.springframework.security" level="DEBUG" />
+    <logger name="org.springframework.security.web.csrf" level="DEBUG" />
+
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
