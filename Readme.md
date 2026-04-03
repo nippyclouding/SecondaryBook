@@ -15,7 +15,7 @@
 YES24, 알라딘의 특징 : 높은 가격과 매입 제한
 
 
-
+<img width="921" height="396" alt="무제 2" src="https://github.com/user-attachments/assets/e0ef86ca-8f00-4005-b508-b83d93dc847d" />
 
 등록의 정확성 : Kakao 도서 API를 이용하여 구매자는 높은 정확도의 정보로 책에 대한 데이터를 확인할 수 있고, 판매자는 등록 시 한 번의 클릭으로 정확한 데이터를 불러올 수 있습니다.
 
