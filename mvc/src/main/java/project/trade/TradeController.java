@@ -36,6 +36,7 @@ public class TradeController {
     // 판매글 단일 조회
     @GetMapping("/trade/{tradeSeq}")
     public String getSaleDetail(@PathVariable long tradeSeq, Model model, HttpSession session) {
+        tradeService.incrementViews(tradeSeq);
         TradeVO trade = tradeService.search(tradeSeq);
 
         int wishCount = tradeService.countLikeAll(tradeSeq); // 총 찜 개수

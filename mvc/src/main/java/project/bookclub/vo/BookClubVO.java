@@ -11,6 +11,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -33,7 +34,7 @@ public class BookClubVO implements Serializable {
     @Min(value = 2, message = "최대 인원은 2명 이상이어야 합니다.")
     @Max(value = 100, message = "최대 인원은 100명 이하이어야 합니다.")
     private Integer book_club_max_member; // 독서모임의 최대 인원
-    private LocalDateTime book_club_deleted_dt; // 독서모임 삭제 일시
+    private LocalDate book_club_deleted_dt; // 독서모임 삭제 일시
     private String banner_img_url; // 독서모임 배너 이미지
     private String book_club_schedule; // 독서모임 정기 일정
     private LocalDateTime upd_dtm; // 독서모임의 내용 수정 일시

@@ -40,48 +40,21 @@
         WHERE s.trade_seq = #{trade_seq}
     </select>
 
-    <!-- 상태별 목록 조회 (관리자용) -->
+    <!-- 상태별 목록 조회 (관리자용) - REQUESTED 시 계좌 정보 포함 -->
     <select id="findByStatus" resultType="project.settlement.SettlementVO">
         SELECT s.*,
                t.sale_title,
-               seller.member_nicknm AS member_seller_nm
-        FROM settlement s
-        JOIN sb_trade_info t ON s.trade_seq = t.trade_seq
-        LEFT JOIN member_info seller ON s.member_seller_seq = seller.member_seq
-        WHERE s.settlement_st = #{settlement_st}
-        ORDER BY s.request_dtm DESC
-    </select>
-
-    <!-- REQUESTED 상태 전체 조회 (배치용) - 이체 계좌 정보 JOIN -->
-    <select id="findAllRequested" resultType="project.settlement.SettlementVO">
-        SELECT s.*,
+               seller.member_nicknm AS member_seller_nm,
                mba.bank_code,
                mba.bank_account_no,
                mba.account_holder_nm
         FROM settlement s
+        JOIN sb_trade_info t ON s.trade_seq = t.trade_seq
+        LEFT JOIN member_info seller ON s.member_seller_seq = seller.member_seq
         LEFT JOIN member_bank_account mba ON s.member_seller_seq = mba.member_seq
-        WHERE s.settlement_st = 'REQUESTED'
-        ORDER BY s.request_dtm ASC
+        WHERE s.settlement_st = #{settlement_st}
+        ORDER BY s.request_dtm DESC
     </select>
-
-    <!-- 정산 완료 처리 (settlement_st = REQUESTED 인 경우만 갱신 → 동시 처리 보호) -->
-    <update id="updateToCompleted">
-        UPDATE settlement
-        SET settlement_st = 'COMPLETED',
-            settled_dtm = now(),
-            upd_dtm = now()
-        WHERE settlement_seq = #{settlement_seq}
-        AND settlement_st = 'REQUESTED'
-    </update>
-
-    <!-- 잔액 부족으로 정산 실패 처리 (배치 skip 시 호출) -->
-    <update id="updateToInsufficient">
-        UPDATE settlement
-        SET settlement_st = 'INSUFFICIENT_BALANCE',
-            upd_dtm = now()
-        WHERE settlement_seq = #{settlement_seq}
-        AND settlement_st = 'REQUESTED'
-    </update>
 
     <!-- sb_trade_info의 settlement_st 업데이트 -->
     <update id="updateTradeSettlementSt">
@@ -91,20 +64,13 @@
         WHERE trade_seq = #{trade_seq}
     </update>
 
-    <!-- 관리자 잔액 조회 (FOR UPDATE: 배치 정산 처리 시 락 획득용) -->
-    <select id="getAdminBalance" resultType="Long">
-        SELECT balance FROM admin_account
-        WHERE account_seq = #{account_seq}
-        FOR UPDATE
-    </select>
-
-    <!-- 관리자 잔액 조회 (읽기 전용: 대시보드·감사로그 기록용, 락 없음) -->
+    <!-- 관리자 잔액 조회 (읽기 전용) -->
     <select id="getAdminBalanceReadOnly" resultType="Long">
         SELECT balance FROM admin_account
         WHERE account_seq = #{account_seq}
     </select>
 
-    <!-- 관리자 잔액 차감 (배치 정산 처리 시) -->
+    <!-- 관리자 잔액 차감 (정산 완료 처리 시) -->
     <update id="updateAdminBalance">
         UPDATE admin_account
         SET balance = balance - #{amount},
@@ -126,39 +92,15 @@
         VALUES (#{account_seq}, #{settlement_seq}, #{amount}, #{balance_after}, #{description}, now())
     </insert>
 
-    <!-- COMPLETED 중 이체 미확인 목록 (관리자 수동 이체 대상) -->
-    <select id="findTransferPending" resultType="project.settlement.SettlementVO">
-        SELECT s.*,
-               t.sale_title,
-               m.member_nicknm AS member_seller_nm,
-               mba.bank_code,
-               mba.bank_account_no,
-               mba.account_holder_nm
-        FROM settlement s
-        JOIN sb_trade_info t ON s.trade_seq = t.trade_seq
-        JOIN member_info m ON s.member_seller_seq = m.member_seq
-        LEFT JOIN member_bank_account mba ON s.member_seller_seq = mba.member_seq
-        WHERE s.settlement_st = 'COMPLETED'
-        AND s.transfer_confirmed_yn = 0
-        ORDER BY s.settled_dtm DESC
-    </select>
-
-    <!-- 이체 미확인 총액 -->
-    <select id="sumTransferPending" resultType="long">
-        SELECT COALESCE(SUM(settlement_amount), 0)
-        FROM settlement
-        WHERE settlement_st = 'COMPLETED'
-        AND transfer_confirmed_yn = 0
-    </select>
-
-    <!-- 이체 완료 확인 (관리자가 수동 이체 후 클릭) -->
+    <!-- 정산 완료 처리 (관리자가 수동 이체 후 클릭: REQUESTED → COMPLETED) -->
     <update id="confirmTransfer">
         UPDATE settlement
-        SET transfer_confirmed_yn = 1,
+        SET settlement_st = 'COMPLETED',
+            settled_dtm = now(),
+            transfer_confirmed_yn = 1,
             upd_dtm = now()
         WHERE settlement_seq = #{settlement_seq}
-        AND settlement_st = 'COMPLETED'
-        AND transfer_confirmed_yn = 0
+        AND settlement_st = 'REQUESTED'
     </update>
 
     <!-- 정산 건수 -->
@@ -167,13 +109,5 @@
         WHERE settlement_st = #{settlement_st}
     </select>
 
-    <!-- 잔액 부족 건을 REQUESTED로 재설정 (관리자 수동 재처리 → 다음 배치에서 재시도) -->
-    <update id="resetToRequested">
-        UPDATE settlement
-        SET settlement_st = 'REQUESTED',
-            upd_dtm = now()
-        WHERE settlement_seq = #{settlement_seq}
-        AND settlement_st = 'INSUFFICIENT_BALANCE'
-    </update>
 
 </mapper>

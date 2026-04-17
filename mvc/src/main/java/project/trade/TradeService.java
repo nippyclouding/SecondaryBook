@@ -12,7 +12,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import project.member.MemberVO;
 import project.payment.PaymentVO;
-import project.settlement.SettlementMapper;
 import project.trade.ENUM.SafePaymentStatus;
 import project.trade.ENUM.SaleStatus;
 import project.util.imgUpload.ImgService;
@@ -40,9 +39,6 @@ public class TradeService {
     private final ChatroomService chatroomService;
     private final MessageService messageService;
     private final ChatMessagePublisher chatMessagePublisher;
-    private final SettlementMapper settlementMapper;
-
-    private static final long ADMIN_ACCOUNT_SEQ = 1L;
 
     @Value("${file.dir}")
     private String fileDir;
@@ -95,6 +91,12 @@ public class TradeService {
         if (safePaymentStatus == SafePaymentStatus.PENDING || safePaymentStatus == SafePaymentStatus.COMPLETED) {
             throw new ForbiddenException("안전결제 진행 중이거나 완료된 거래는 삭제할 수 없습니다.");
         }
+    }
+
+    // 조회수 증가 (캐시 갱신 불필요 — 실시간 정확도보다 성능 우선)
+    @Transactional
+    public void incrementViews(long trade_seq) {
+        tradeMapper.incrementViews(trade_seq);
     }
 
     // 판매글 단일 조회
@@ -370,24 +372,18 @@ public class TradeService {
     }
 
     /**
-     * 구매 확정 + 관리자 잔액 증가 + 결제 완료 메시지 전송을 하나의 트랜잭션으로 통합
-     *
-     * @param amount 결제 금액 (sale_price + delivery_cost). 관리자 계좌 잔액에 반영된다.
+     * 구매 확정 + 결제 완료 메시지 전송을 하나의 트랜잭션으로 통합
      */
     @Transactional
     @CacheEvict(value = "trade", key = "#tradeSeq")
-    public void completePurchaseAndNotify(Long tradeSeq, long buyerSeq, int amount, String postNo, String addrH, String addrD) {
+    public void completePurchaseAndNotify(Long tradeSeq, long buyerSeq, String postNo, String addrH, String addrD) {
         // 1. 구매 확정 처리 (상태 가드로 중복 처리 방지)
         int updated = tradeMapper.updatePurchaseCompleted(tradeSeq, buyerSeq, postNo, addrH, addrD);
         if (updated == 0) {
             throw new InvalidRequestException("결제 처리 실패: 이미 처리되었거나 유효하지 않은 거래입니다. trade_seq=" + tradeSeq);
         }
 
-        // 2. 관리자 계좌 잔액 증가 (구매자 결제 금액 수취)
-        settlementMapper.increaseAdminBalance(ADMIN_ACCOUNT_SEQ, amount);
-        log.info("관리자 잔액 증가: trade_seq={}, 금액={}원", tradeSeq, amount);
-
-        // 3. 채팅방 조회 후 결제 완료 메시지 저장
+        // 2. 채팅방 조회 후 결제 완료 메시지 저장
         Long chatRoomSeq = chatroomService.findChatRoomSeqByTradeAndBuyer(tradeSeq, buyerSeq);
         if (chatRoomSeq != null) {
             MessageVO completeMsg = new MessageVO();

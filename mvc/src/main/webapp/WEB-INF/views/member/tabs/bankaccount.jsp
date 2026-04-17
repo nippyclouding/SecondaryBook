@@ -44,7 +44,7 @@
             <div class="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
                 <i data-lucide="info" class="w-4 h-4 text-amber-500 mt-0.5 shrink-0"></i>
                 <p class="text-xs font-medium text-amber-700 leading-relaxed">
-                    정산은 매일 새벽 3시 배치 처리 후 관리자가 해당 계좌로 수동 이체합니다.<br>
+                    정산 신청 후 관리자가 해당 계좌로 수동 이체합니다.<br>
                     계좌 변경 시 다음 정산부터 적용됩니다.
                 </p>
             </div>

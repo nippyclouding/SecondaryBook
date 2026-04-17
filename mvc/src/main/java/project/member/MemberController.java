@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import project.member.validation.SignUpGroup;
-import project.member.validation.UpdateGroup;
+
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import project.admin.AdminService;
@@ -153,7 +152,7 @@ public class MemberController {
     }
 
     @PostMapping("/auth/signup")
-    public String signUp(@Validated(SignUpGroup.class) MemberVO vo, BindingResult bindingResult, Model model) {
+    public String signUp(@Validated MemberVO vo, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldErrors().stream()
                     .map(e -> e.getDefaultMessage())
@@ -421,7 +420,7 @@ public class MemberController {
     // 프로필 페이지 기능
     // 회원 정보 수정
     @PostMapping("/member/update")
-    public String updateMember(@Validated(UpdateGroup.class) MemberVO vo, BindingResult bindingResult,
+    public String updateMember(@Validated MemberVO vo, BindingResult bindingResult,
             HttpSession sess, Model model) {
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldErrors().stream()

@@ -195,7 +195,7 @@ public class PaymentController {
 
         // 구매 확정 + 결제 완료 메시지 저장을 하나의 트랜잭션으로 처리
         try {
-            tradeService.completePurchaseAndNotify(trade_seq, buyer.getMember_seq(), serverAmount, payment.getPost_no(), payment.getAddr_h(), payment.getAddr_d());
+            tradeService.completePurchaseAndNotify(trade_seq, buyer.getMember_seq(), payment.getPost_no(), payment.getAddr_h(), payment.getAddr_d());
         } catch (Exception e) {
             // DB 처리 실패 시 토스에 결제 취소 요청 → 구매자 자동 환불
             log.error("결제 DB 처리 실패, 토스 결제 취소 시도: trade_seq={}", trade_seq, e);

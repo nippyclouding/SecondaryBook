@@ -29,8 +29,6 @@ public class TradeVO implements Serializable {
     private Long member_seller_seq; // 거래 구매자
     private Long member_buyer_seq;  // 거래 판매자
     private Long category_seq;      // 카테고리
-    private Long book_info_seq;     // 판매 책
-    private Long settlement_seq;    // 정산
     private Long pending_buyer_seq; // 구매 대기자 (거래 구매 -> 안전 결제 시 거래 상태가 pending 으로 된다)
 
 
@@ -41,6 +39,8 @@ public class TradeVO implements Serializable {
     private Integer delivery_cost;          // 배송비
     private String sale_rg;                 // 판매 지역
     private SaleStatus sale_st;             // 판매 상태 (판매중, 예약, 완료)
+
+    private Long views;                       // 조회수
 
     private LocalDateTime sale_st_dtm;      // 상품상태 변경 시간
     private LocalDateTime book_sale_dtm;    //판매완료 시간

@@ -268,7 +268,7 @@
                 <div class="pt-6 text-center">
                     <p class="text-xs text-gray-400 leading-relaxed">
                         토스페이 안전결제 이용 시 정산 금액에서 <span class="font-bold text-gray-500">수수료 1%</span>가 차감됩니다.<br/>
-                        안전결제 정산 금액은 구매확정 후 정산 신청 시 <span class="font-bold text-gray-500">매일 새벽 3시</span>에 자동으로 처리됩니다.
+                        안전결제 정산 금액은 구매확정 후 정산 신청 시 관리자가 직접 처리합니다.
                     </p>
                 </div>
 

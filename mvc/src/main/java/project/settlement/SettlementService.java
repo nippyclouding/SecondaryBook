@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import project.member.MailService;
 import project.member.MemberBankAccountMapper;
-import project.member.MemberMapper;
-import project.member.MemberVO;
 import project.trade.TradeMapper;
 import project.trade.TradeVO;
 import project.util.AesEncryptionUtil;
@@ -28,8 +25,6 @@ public class SettlementService {
     private final TradeMapper tradeMapper;
     private final AesEncryptionUtil aesEncryptionUtil;
     private final MemberBankAccountMapper memberBankAccountMapper;
-    private final MemberMapper memberMapper;
-    private final MailService mailService;
 
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.01"); // 1%
     private static final long ADMIN_ACCOUNT_SEQ = 1L;
@@ -58,7 +53,7 @@ public class SettlementService {
             throw new SettlementException("이미 정산 신청되었거나 정산이 완료된 거래입니다.");
         }
 
-        // 2. 정산 계좌 등록 여부 확인 (계좌 미등록 시 배치에서 '계좌 미등록'으로 처리되므로 신청 단계에서 차단)
+        // 2. 정산 계좌 등록 여부 확인
         if (memberBankAccountMapper.findByMemberSeq(member_seq) == null) {
             throw new SettlementException("정산 계좌를 먼저 등록해주세요. (마이페이지 > 정산 계좌 관리)");
         }
@@ -99,7 +94,15 @@ public class SettlementService {
 
     // 상태별 목록 조회 (관리자)
     public List<SettlementVO> findByStatus(SettlementStatus status) {
-        return settlementMapper.findByStatus(status);
+        List<SettlementVO> list = settlementMapper.findByStatus(status);
+        if (status == SettlementStatus.REQUESTED) {
+            for (SettlementVO s : list) {
+                if (s.getBank_account_no() != null) {
+                    s.setBank_account_no(aesEncryptionUtil.decrypt(s.getBank_account_no()));
+                }
+            }
+        }
+        return list;
     }
 
     // 정산 건수 (관리자 대시보드)
@@ -110,75 +113,6 @@ public class SettlementService {
     // 관리자 잔액 조회 (대시보드 표시용 - 읽기 전용, FOR UPDATE 없음)
     public Long getAdminBalance() {
         return settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
-    }
-
-    /**
-     * 이체 대기 목록 조회 (관리자 페이지)
-     * settlement_st = COMPLETED + transfer_confirmed_yn = 0 인 건
-     * 관리자가 은행 앱에서 수동 이체해야 할 대상 목록 (계좌번호 복호화 후 반환)
-     */
-    public List<SettlementVO> findTransferPending() {
-        List<SettlementVO> list = settlementMapper.findTransferPending();
-        for (SettlementVO s : list) {
-            if (s.getBank_account_no() != null) {
-                s.setBank_account_no(aesEncryptionUtil.decrypt(s.getBank_account_no()));
-            }
-        }
-        return list;
-    }
-
-    /**
-     * 이체 대기 총액 (관리자 페이지 합계 표시)
-     */
-    public long sumTransferPending() {
-        return settlementMapper.sumTransferPending();
-    }
-
-    /**
-     * 잔액 부족 처리 (Spring Batch skip 리스너에서 호출)
-     * settlement_st = INSUFFICIENT_BALANCE, trade.settlement_st = INSUFFICIENT_BALANCE
-     */
-    @Transactional
-    public void markAsInsufficient(long settlement_seq, long trade_seq, long member_seller_seq) {
-        // ① 핵심 로직: 상태 변경
-        settlementMapper.updateToInsufficient(settlement_seq);
-        settlementMapper.updateTradeSettlementSt(trade_seq, SettlementStatus.INSUFFICIENT_BALANCE);
-        log.warn("잔액 부족으로 정산 처리 실패: settlement_seq={}", settlement_seq);
-
-        // ② 판매자 이메일 조회 후 알림 발송 (실패해도 트랜잭션에 영향 없음)
-        MemberVO seller = memberMapper.findByMemberSeq(member_seller_seq);
-        if (seller != null && seller.getMember_email() != null) {
-            SettlementVO settlement = settlementMapper.findBySettlementSeq(settlement_seq);
-            int amount = settlement != null ? settlement.getSettlement_amount() : 0;
-            try {
-                mailService.sendInsufficientBalanceEmail(
-                        seller.getMember_email(),
-                        seller.getMember_nicknm(),
-                        amount,
-                        trade_seq
-                );
-            } catch (Exception e) {
-                log.warn("잔액 부족 이메일 발송 실패 (정산 상태 변경은 유지됨): settlement_seq={}, email={}",
-                        settlement_seq, seller.getMember_email(), e);
-            }
-        }
-    }
-
-    /**
-     * 잔액 부족 건 재처리 (관리자가 잔액 충전 후 호출)
-     * INSUFFICIENT_BALANCE → REQUESTED 로 되돌려 다음 배치에서 재시도
-     * trade.settlement_st도 동일하게 REQUESTED로 복원
-     */
-    @Transactional
-    public boolean resetToRequested(long settlement_seq) {
-        SettlementVO settlement = settlementMapper.findBySettlementSeq(settlement_seq);
-        if (settlement == null) return false;
-        int updated = settlementMapper.resetToRequested(settlement_seq);
-        if (updated > 0) {
-            settlementMapper.updateTradeSettlementSt(settlement.getTrade_seq(), SettlementStatus.REQUESTED);
-            log.info("정산 재처리 설정: settlement_seq={}, trade_seq={}", settlement_seq, settlement.getTrade_seq());
-        }
-        return updated > 0;
     }
 
     /**
@@ -200,27 +134,29 @@ public class SettlementService {
     }
 
     /**
-     * 이체 완료 확인 (관리자가 수동 이체 후 클릭)
-     * transfer_confirmed_yn = 1 로 업데이트 + admin_account_log에 확인 이력 기록
+     * 정산 완료 처리 (관리자가 수동 이체 후 클릭)
+     * REQUESTED → COMPLETED + 잔액 차감 + 감사 로그
      */
     @Transactional
     public boolean confirmTransfer(long settlement_seq) {
+        SettlementVO settlement = settlementMapper.findBySettlementSeq(settlement_seq);
+        if (settlement == null) return false;
+
         int updated = settlementMapper.confirmTransfer(settlement_seq);
         if (updated > 0) {
-            // 감사 로그: 이체 확인 이벤트를 admin_account_log에 기록
-            SettlementVO settlement = settlementMapper.findBySettlementSeq(settlement_seq);
-            Long currentBalance = settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
-            if (settlement != null && currentBalance != null) {
-                settlementMapper.insertAccountLog(
-                        ADMIN_ACCOUNT_SEQ,
-                        settlement_seq,
-                        0,           // 잔액 변동 없음 (이미 배치에서 차감 완료)
-                        currentBalance,
-                        "거래#" + settlement.getTrade_seq() + " 이체 완료 확인"
-                );
-            }
-            log.info("이체 완료 확인: settlement_seq={}, trade_seq={}",
-                    settlement_seq, settlement != null ? settlement.getTrade_seq() : "unknown");
+            settlementMapper.updateTradeSettlementSt(settlement.getTrade_seq(), SettlementStatus.COMPLETED);
+            settlementMapper.updateAdminBalance(ADMIN_ACCOUNT_SEQ, settlement.getSettlement_amount());
+
+            Long balanceAfter = settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
+            settlementMapper.insertAccountLog(
+                    ADMIN_ACCOUNT_SEQ,
+                    settlement_seq,
+                    -settlement.getSettlement_amount(),
+                    balanceAfter != null ? balanceAfter : 0L,
+                    "거래#" + settlement.getTrade_seq() + " 정산 완료 처리"
+            );
+            log.info("정산 완료 처리: settlement_seq={}, trade_seq={}, 금액={}원",
+                    settlement_seq, settlement.getTrade_seq(), settlement.getSettlement_amount());
         }
         return updated > 0;
     }

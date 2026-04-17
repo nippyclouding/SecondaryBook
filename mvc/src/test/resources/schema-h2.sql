@@ -43,8 +43,6 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     member_seller_seq   BIGINT NOT NULL,
     member_buyer_seq    BIGINT,
     category_seq        BIGINT NOT NULL DEFAULT 1,
-    book_info_seq       BIGINT NOT NULL DEFAULT 1,
-    settlement_seq      BIGINT,
     pending_buyer_seq   BIGINT,
     sale_title          VARCHAR(200) NOT NULL,
     book_st             VARCHAR(20)  DEFAULT 'GOOD',

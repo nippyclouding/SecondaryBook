@@ -20,6 +20,7 @@ public interface TradeMapper {
     TradeVO findBySeq(@Param("trade_seq") long trade_seq);  // 상세조회
     TradeVO findBySeqForUpdate(@Param("trade_seq") long trade_seq); // 정산 신청용 (FOR UPDATE 락 획득)
     List<TradeImageVO> findImgUrl(@Param("trade_seq") long trade_seq);    // 이미지 url 조회
+    int incrementViews(@Param("trade_seq") long trade_seq); // 조회수 증가
     int save(TradeVO tradeVO);  // 판매글 등록
     int update(TradeVO tradeVO); // 판매글 수정
     int delete(@Param("trade_seq") Long trade_seq);
@@ -42,7 +43,7 @@ public interface TradeMapper {
     List<TradeVO> findAllSaleTrades(@Param("member_seq") long member_seq,
                                     @Param("status") String status); // 판매내역 조회
 
-    SafePaymentStatus findSafePaymentStatus(@Param("trade_seq") long trade_seq); // 안전 결제 상태 조회 (FOR UPDATE로 락 획득)
+    SafePaymentStatus findSafePaymentStatus(@Param("trade_seq") long trade_seq);
     int updateSafePaymentStatus(@Param("trade_seq") long trade_seq,
                                 @Param("status") SafePaymentStatus status); // 안전 결제 상태 업데이트
 

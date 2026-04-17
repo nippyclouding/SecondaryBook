@@ -1,31 +1,30 @@
-package spring.batch.scheduler;
+package project.trade;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import spring.batch.trade.TradeMapper;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
-public class SafePaymentScheduler {
+@Slf4j
+public class TradeScheduler {
 
-    private final TradeMapper tradeMapper;
+    private final TradeService tradeService;
 
-    // 1분마다 실행
+    // 1분마다: 만료된 안전결제 초기화
     @Scheduled(fixedRate = 60000)
     public void cleanupExpiredSafePayments() {
-        int count = tradeMapper.resetExpiredSafePayments();
+        int count = tradeService.resetExpiredSafePayments();
         if (count > 0) {
             log.info("만료된 안전결제 {}건 초기화 완료", count);
         }
     }
 
-    // 15일 지난 구매 자동 확정 (1일 1회 실행)
+    // 매일 자정: 15일 경과 구매 자동 확정
     @Scheduled(cron = "0 0 0 * * *")
     public void autoConfirmExpiredPurchases() {
-        int count = tradeMapper.autoConfirmExpiredPurchases();
+        int count = tradeService.autoConfirmExpiredPurchases();
         if (count > 0) {
             log.info("15일 경과 구매 확정 처리: {}건", count);
         }

@@ -16,7 +16,6 @@ public class BookClubBoardVO implements Serializable {
     private String board_cont; // 게시글 내용
     private String board_img_url; // 게시글에 첨부된 사진
 
-    private Long book_seq; // 책 API의 ID, FK
     private LocalDateTime board_deleted_dtm; // 게시글 삭제 시간
     private LocalDateTime board_crt_dtm; // 게시글 생성 시간
     private LocalDateTime board_upd_dtm; // 게시글 수정 시간

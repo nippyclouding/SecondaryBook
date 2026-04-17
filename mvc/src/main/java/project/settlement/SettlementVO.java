@@ -34,7 +34,7 @@ public class SettlementVO implements Serializable {
     private String sale_title;
     private String member_seller_nm;   // 판매자 닉네임
 
-    // JOIN 조회용 (배치 처리 + 이체 목록)
+    // JOIN 조회용 (정산 신청 목록 계좌 표시)
     private String bank_code;          // 은행코드
     @ToString.Exclude
     private String bank_account_no;    // 계좌번호 (로그 노출 방지)

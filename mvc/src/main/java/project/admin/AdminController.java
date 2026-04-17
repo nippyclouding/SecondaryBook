@@ -629,54 +629,6 @@ public class AdminController {
     }
 
     /**
-     * 이체 대기 목록 + 총액 (관리자가 은행 앱에서 수동 이체해야 할 대상)
-     * settlement_st = COMPLETED + transfer_confirmed_yn = 0 인 건
-     */
-    @GetMapping("/api/settlement/transfer-pending")
-    @ResponseBody
-    public Map<String, Object> getTransferPending() {
-        List<SettlementVO> list = settlementService.findTransferPending();
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("list", list);
-        result.put("totalAmount", settlementService.sumTransferPending());
-        result.put("count", list.size());
-        return result;
-    }
-
-    /**
-     * 잔액 부족 건 재처리 (관리자가 계좌 충전 후 REQUESTED로 재설정)
-     * 다음 배치 실행 시 자동으로 재시도됨
-     */
-    @PostMapping("/api/settlement/reset/{settlement_seq}")
-    @ResponseBody
-    public Map<String, Object> resetSettlement(@PathVariable long settlement_seq) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            boolean success = settlementService.resetToRequested(settlement_seq);
-            result.put("success", success);
-            result.put("message", success ? "재처리 대기로 설정되었습니다. 다음 배치 실행 시 처리됩니다." : "처리할 수 없는 건입니다.");
-        } catch (Exception e) {
-            log.error("정산 재처리 설정 실패: settlement_seq={}", settlement_seq, e);
-            result.put("success", false);
-            result.put("message", "처리 중 오류가 발생했습니다.");
-        }
-        return result;
-    }
-
-    // 잔액 부족 목록 (INSUFFICIENT_BALANCE)
-    @GetMapping("/api/settlement/insufficient")
-    @ResponseBody
-    public Map<String, Object> getInsufficientSettlements() {
-        List<SettlementVO> list = settlementService.findByStatus(SettlementStatus.INSUFFICIENT_BALANCE);
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("list", list);
-        result.put("count", list.size());
-        return result;
-    }
-
-    /**
      * 이체 완료 확인 (관리자가 은행 앱에서 이체 완료 후 클릭)
      * transfer_confirmed_yn = 1 로 업데이트
      */

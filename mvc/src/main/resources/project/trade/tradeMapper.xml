@@ -19,7 +19,6 @@
             sb.sale_st,
             sb.sale_st_dtm,
             sb.views,
-            sb.wish_cnt,
             sb.book_sale_dtm,
             sb.post_no,
             sb.addr_h,
@@ -159,6 +158,13 @@
         UPDATE sb_trade_info
         SET del_dtm = now()
         WHERE trade_seq = #{trade_seq}
+    </update>
+
+    <update id="incrementViews" parameterType="long">
+        UPDATE sb_trade_info
+        SET views = views + 1
+        WHERE trade_seq = #{trade_seq}
+          AND del_dtm IS NULL
     </update>
 
 <!--    <select id="findAll" resultType="project.trade.TradeVO">-->

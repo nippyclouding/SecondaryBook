@@ -34,7 +34,7 @@
       <div>
         <p class="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Admin Console</p>
         <h1 class="text-2xl font-black text-gray-900">관리자 잔액 충전</h1>
-        <p class="text-sm text-gray-500 mt-1">정산 배치에서 사용하는 운영 잔액을 충전합니다.</p>
+        <p class="text-sm text-gray-500 mt-1">정산 처리에 사용하는 운영 잔액을 충전합니다.</p>
       </div>
       <a href="${pageContext.request.contextPath}/admin"
          class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition">
