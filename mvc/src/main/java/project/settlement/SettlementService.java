@@ -27,7 +27,6 @@ public class SettlementService {
     private final MemberBankAccountMapper memberBankAccountMapper;
 
     private static final BigDecimal COMMISSION_RATE = new BigDecimal("0.01"); // 1%
-    private static final long ADMIN_ACCOUNT_SEQ = 1L;
 
     /**
      * 판매자 정산 신청
@@ -110,32 +109,9 @@ public class SettlementService {
         return settlementMapper.countByStatus(status);
     }
 
-    // 관리자 잔액 조회 (대시보드 표시용 - 읽기 전용, FOR UPDATE 없음)
-    public Long getAdminBalance() {
-        return settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
-    }
-
-    /**
-     * 관리자 잔액 충전 (Toss 결제 승인 완료 후 호출)
-     * admin_account.balance 증가 + 감사 로그 INSERT
-     */
-    @Transactional
-    public void chargeAdminBalance(String paymentKey, String orderId, int amount) {
-        settlementMapper.increaseAdminBalance(ADMIN_ACCOUNT_SEQ, amount);
-        Long balanceAfter = settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
-        settlementMapper.insertAccountLog(
-                ADMIN_ACCOUNT_SEQ,
-                0L,
-                amount,
-                balanceAfter != null ? balanceAfter : 0L,
-                "관리자 잔액 충전 | orderId=" + orderId
-        );
-        log.info("관리자 잔액 충전 완료: {}원, 잔액={}원, orderId={}", amount, balanceAfter, orderId);
-    }
-
     /**
      * 정산 완료 처리 (관리자가 수동 이체 후 클릭)
-     * REQUESTED → COMPLETED + 잔액 차감 + 감사 로그
+     * REQUESTED → COMPLETED
      */
     @Transactional
     public boolean confirmTransfer(long settlement_seq) {
@@ -145,16 +121,6 @@ public class SettlementService {
         int updated = settlementMapper.confirmTransfer(settlement_seq);
         if (updated > 0) {
             settlementMapper.updateTradeSettlementSt(settlement.getTrade_seq(), SettlementStatus.COMPLETED);
-            settlementMapper.updateAdminBalance(ADMIN_ACCOUNT_SEQ, settlement.getSettlement_amount());
-
-            Long balanceAfter = settlementMapper.getAdminBalanceReadOnly(ADMIN_ACCOUNT_SEQ);
-            settlementMapper.insertAccountLog(
-                    ADMIN_ACCOUNT_SEQ,
-                    settlement_seq,
-                    -settlement.getSettlement_amount(),
-                    balanceAfter != null ? balanceAfter : 0L,
-                    "거래#" + settlement.getTrade_seq() + " 정산 완료 처리"
-            );
             log.info("정산 완료 처리: settlement_seq={}, trade_seq={}, 금액={}원",
                     settlement_seq, settlement.getTrade_seq(), settlement.getSettlement_amount());
         }

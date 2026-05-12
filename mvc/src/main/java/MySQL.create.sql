@@ -36,10 +36,7 @@ CREATE TABLE IF NOT EXISTS admin (
 -- 카테고리
 CREATE TABLE IF NOT EXISTS category (
     category_seq        BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    category_nm         VARCHAR(100)    NOT NULL,
-    category_sort_seq   BIGINT,
-    crt_dtm             TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    upd_dtm             TIMESTAMP       NULL
+    category_nm         VARCHAR(100)    NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 배너
@@ -133,7 +130,7 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     safe_payment_expire_dtm     TIMESTAMP           NULL,
     pending_buyer_seq           BIGINT,
     confirm_purchase            TINYINT(1)          NULL,
-    settlement_st               ENUM('NONE','READY','REQUESTED','COMPLETED','INSUFFICIENT_BALANCE') DEFAULT 'NONE',
+    settlement_st               ENUM('NONE','READY','REQUESTED','COMPLETED') DEFAULT 'NONE',
     FOREIGN KEY (member_seller_seq) REFERENCES member_info(member_seq),
     FOREIGN KEY (member_buyer_seq) REFERENCES member_info(member_seq),
     FOREIGN KEY (category_seq) REFERENCES category(category_seq)
@@ -182,14 +179,11 @@ CREATE TABLE IF NOT EXISTS chatroom (
 CREATE TABLE IF NOT EXISTS chat_msg (
     chat_msg_seq        BIGINT          AUTO_INCREMENT PRIMARY KEY,
     chat_room_seq       BIGINT          NOT NULL,
-    trade_seq           BIGINT,
     sender_seq          BIGINT          NOT NULL,
     chat_cont           TEXT,
     sent_dtm            TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     read_yn             TINYINT(1)      DEFAULT 0,
     FOREIGN KEY (chat_room_seq) REFERENCES chatroom(chat_room_seq)
-    -- trade_seq FK 제거: 시스템 메시지(결제 알림 등)는 trade_seq가 없어 FK 위반 발생
-    -- trade 컨텍스트는 chat_room_seq → chatroom.trade_seq로 조회 가능
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -331,12 +325,9 @@ CREATE TABLE IF NOT EXISTS settlement (
     commission_rate         DECIMAL(5,4),
     commission              INT,
     settlement_amount       INT,
-    settlement_st           ENUM('NONE','READY','REQUESTED','COMPLETED','INSUFFICIENT_BALANCE') DEFAULT 'REQUESTED',
-    transfer_confirmed_yn   TINYINT(1)      DEFAULT 0,  -- 관리자 이체 완료 확인 여부
+    settlement_st           ENUM('REQUESTED','COMPLETED') DEFAULT 'REQUESTED',
     request_dtm             TIMESTAMP       NULL,
     settled_dtm             TIMESTAMP       NULL,
-    crt_dtm                 TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    upd_dtm                 TIMESTAMP       NULL,
     FOREIGN KEY (trade_seq) REFERENCES sb_trade_info(trade_seq),
     FOREIGN KEY (member_seller_seq) REFERENCES member_info(member_seq)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -354,27 +345,6 @@ CREATE TABLE IF NOT EXISTS member_bank_account (
     upd_dtm             TIMESTAMP       NULL,
     FOREIGN KEY (member_seq) REFERENCES member_info(member_seq)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 관리자 계좌
-CREATE TABLE IF NOT EXISTS admin_account (
-    account_seq         BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    balance             BIGINT          DEFAULT 0,
-    crt_dtm             TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    upd_dtm             TIMESTAMP       NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 관리자 계좌 로그
-CREATE TABLE IF NOT EXISTS admin_account_log (
-    log_seq             BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    account_seq         BIGINT          NOT NULL,
-    settlement_seq      BIGINT,
-    amount              BIGINT,          -- BIGINT: 잔액 변동 금액 (음수=차감, 0=이체확인)
-    balance_after       BIGINT,
-    description         VARCHAR(500),
-    crt_dtm             TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (account_seq) REFERENCES admin_account(account_seq)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 -- =============================================
 -- 9. Indexes (성능 최적화)
@@ -439,7 +409,6 @@ CREATE INDEX idx_bcbl_board ON book_club_board_like(book_club_board_seq);
 
 -- 정산
 CREATE INDEX idx_settlement_st ON settlement(settlement_st);
-CREATE INDEX idx_settlement_transfer ON settlement(settlement_st, transfer_confirmed_yn);
 
 -- 판매자 계좌
 CREATE INDEX idx_bank_account_member ON member_bank_account(member_seq);
@@ -516,8 +485,6 @@ CREATE INDEX idx_member_tel                ON member_info (member_tel_no, member
 -- [MEDIUM] 정산
 -- settlement.trade_seq UNIQUE 제약으로 유니크 인덱스가 이미 자동 생성되어 있으므로 별도 생성 불필요
 CREATE INDEX idx_settlement_seller_st      ON settlement (member_seller_seq, settlement_st);
-CREATE INDEX idx_account_log_time          ON admin_account_log (account_seq, crt_dtm DESC);
-CREATE INDEX idx_account_log_settlement    ON admin_account_log (settlement_seq);
 
 
 -- =============================================
@@ -525,143 +492,28 @@ CREATE INDEX idx_account_log_settlement    ON admin_account_log (settlement_seq)
 -- =============================================
 
 -- 카테고리
-INSERT INTO category (category_nm, category_sort_seq) VALUES
-    ('소설', 1),
-    ('시/에세이', 2),
-    ('인문', 3),
-    ('역사', 4),
-    ('사회/정치', 5),
-    ('경제/경영', 6),
-    ('자기계발', 7),
-    ('과학', 8),
-    ('IT/프로그래밍', 9),
-    ('예술/대중문화', 10),
-    ('여행', 11),
-    ('요리', 12),
-    ('건강', 13),
-    ('종교', 14),
-    ('아동', 15),
-    ('청소년', 16),
-    ('만화', 17),
-    ('외국어', 18),
-    ('수험서/자격증', 19),
-    ('참고서', 20);
+INSERT INTO category (category_nm) VALUES
+    ('소설'),
+    ('시/에세이'),
+    ('인문'),
+    ('역사'),
+    ('사회/정치'),
+    ('경제/경영'),
+    ('자기계발'),
+    ('과학'),
+    ('IT/프로그래밍'),
+    ('예술/대중문화'),
+    ('여행'),
+    ('요리'),
+    ('건강'),
+    ('종교'),
+    ('아동'),
+    ('청소년'),
+    ('만화'),
+    ('외국어'),
+    ('수험서/자격증'),
+    ('참고서');
 
 -- 관리자 계정 (id: admin, pw: 1234, BCrypt)
 INSERT INTO admin (admin_login_id, admin_password) VALUES
     ('admin', '$2y$10$iCNAQBozFX2PQqVJZAmkYOrjMNDPo.n3hGD6CAxV7BCoSy7BuRgr2');
-
--- 관리자 계좌 초기화
-INSERT INTO admin_account (balance) VALUES (0);
-
-
-
--- =============================================
--- 12. Spring Batch 5.x 메타데이터 테이블
---     (batch/ 서버 전용, spring.batch.jdbc.initialize-schema=never 설정 시 수동 실행 필요)
---     Spring Batch 5.x (Spring Boot 3.x) 기준 스키마
--- =============================================
-
-CREATE TABLE IF NOT EXISTS BATCH_JOB_INSTANCE (
-  JOB_INSTANCE_ID BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  VERSION         BIGINT,
-  JOB_NAME        VARCHAR(100) NOT NULL,
-  JOB_KEY         VARCHAR(32)  NOT NULL,
-  CONSTRAINT JOB_INST_UN UNIQUE (JOB_NAME, JOB_KEY)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS BATCH_JOB_EXECUTION (
-  JOB_EXECUTION_ID BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  VERSION          BIGINT,
-  JOB_INSTANCE_ID  BIGINT       NOT NULL,
-  CREATE_TIME      DATETIME(6)  NOT NULL,
-  START_TIME       DATETIME(6)  DEFAULT NULL,
-  END_TIME         DATETIME(6)  DEFAULT NULL,
-  STATUS           VARCHAR(10),
-  EXIT_CODE        VARCHAR(2500),
-  EXIT_MESSAGE     VARCHAR(2500),
-  LAST_UPDATED     DATETIME(6),
-  -- Spring Batch 5.x: JOB_CONFIGURATION_LOCATION 컬럼 제거됨 (4.x에 존재했던 컬럼)
-  CONSTRAINT JOB_INST_EXEC_FK FOREIGN KEY (JOB_INSTANCE_ID)
-    REFERENCES BATCH_JOB_INSTANCE(JOB_INSTANCE_ID)
-) ENGINE=InnoDB;
-
--- Spring Batch 5.x: 파라미터 구조 변경 (TYPE_CD/KEY_NAME/STRING_VAL/DATE_VAL/LONG_VAL/DOUBLE_VAL → PARAMETER_NAME/PARAMETER_TYPE/PARAMETER_VALUE)
-CREATE TABLE IF NOT EXISTS BATCH_JOB_EXECUTION_PARAMS (
-  JOB_EXECUTION_ID BIGINT       NOT NULL,
-  PARAMETER_NAME   VARCHAR(100) NOT NULL,
-  PARAMETER_TYPE   VARCHAR(100) NOT NULL,
-  PARAMETER_VALUE  VARCHAR(2500),
-  IDENTIFYING      CHAR(1)      NOT NULL,
-  CONSTRAINT JOB_EXEC_PARAMS_FK FOREIGN KEY (JOB_EXECUTION_ID)
-    REFERENCES BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
-) ENGINE=InnoDB;
-
--- Spring Batch 5.x: CREATE_TIME 컬럼 추가됨
-CREATE TABLE IF NOT EXISTS BATCH_STEP_EXECUTION (
-  STEP_EXECUTION_ID  BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  VERSION            BIGINT       NOT NULL,
-  STEP_NAME          VARCHAR(100) NOT NULL,
-  JOB_EXECUTION_ID   BIGINT       NOT NULL,
-  CREATE_TIME        DATETIME(6)  NOT NULL,
-  START_TIME         DATETIME(6)  DEFAULT NULL,
-  END_TIME           DATETIME(6)  DEFAULT NULL,
-  STATUS             VARCHAR(10),
-  COMMIT_COUNT       BIGINT,
-  READ_COUNT         BIGINT,
-  FILTER_COUNT       BIGINT,
-  WRITE_COUNT        BIGINT,
-  READ_SKIP_COUNT    BIGINT,
-  WRITE_SKIP_COUNT   BIGINT,
-  PROCESS_SKIP_COUNT BIGINT,
-  ROLLBACK_COUNT     BIGINT,
-  EXIT_CODE          VARCHAR(2500),
-  EXIT_MESSAGE       VARCHAR(2500),
-  LAST_UPDATED       DATETIME(6),
-  CONSTRAINT JOB_EXEC_STEP_FK FOREIGN KEY (JOB_EXECUTION_ID)
-    REFERENCES BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS BATCH_STEP_EXECUTION_CONTEXT (
-  STEP_EXECUTION_ID BIGINT        NOT NULL PRIMARY KEY,
-  SHORT_CONTEXT     VARCHAR(2500) NOT NULL,
-  SERIALIZED_CONTEXT TEXT,
-  CONSTRAINT STEP_EXEC_CTX_FK FOREIGN KEY (STEP_EXECUTION_ID)
-    REFERENCES BATCH_STEP_EXECUTION(STEP_EXECUTION_ID)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS BATCH_JOB_EXECUTION_CONTEXT (
-  JOB_EXECUTION_ID  BIGINT        NOT NULL PRIMARY KEY,
-  SHORT_CONTEXT     VARCHAR(2500) NOT NULL,
-  SERIALIZED_CONTEXT TEXT,
-  CONSTRAINT JOB_EXEC_CTX_FK FOREIGN KEY (JOB_EXECUTION_ID)
-    REFERENCES BATCH_JOB_EXECUTION(JOB_EXECUTION_ID)
-) ENGINE=InnoDB;
-
--- Spring Batch 5.x: SEQ 테이블 구조 변경 (UNIQUE_KEY 컬럼 추가, 중복 방지 INSERT)
-CREATE TABLE IF NOT EXISTS BATCH_STEP_EXECUTION_SEQ (
-  ID         BIGINT  NOT NULL,
-  UNIQUE_KEY CHAR(1) NOT NULL,
-  CONSTRAINT UNIQUE_KEY_UN UNIQUE (UNIQUE_KEY)
-) ENGINE=InnoDB;
-INSERT INTO BATCH_STEP_EXECUTION_SEQ (ID, UNIQUE_KEY)
-  SELECT * FROM (SELECT 0 AS ID, '0' AS UNIQUE_KEY) AS tmp
-  WHERE NOT EXISTS (SELECT * FROM BATCH_STEP_EXECUTION_SEQ);
-
-CREATE TABLE IF NOT EXISTS BATCH_JOB_EXECUTION_SEQ (
-  ID         BIGINT  NOT NULL,
-  UNIQUE_KEY CHAR(1) NOT NULL,
-  CONSTRAINT UNIQUE_KEY_UN UNIQUE (UNIQUE_KEY)
-) ENGINE=InnoDB;
-INSERT INTO BATCH_JOB_EXECUTION_SEQ (ID, UNIQUE_KEY)
-  SELECT * FROM (SELECT 0 AS ID, '0' AS UNIQUE_KEY) AS tmp
-  WHERE NOT EXISTS (SELECT * FROM BATCH_JOB_EXECUTION_SEQ);
-
-CREATE TABLE IF NOT EXISTS BATCH_JOB_SEQ (
-  ID         BIGINT  NOT NULL,
-  UNIQUE_KEY CHAR(1) NOT NULL,
-  CONSTRAINT UNIQUE_KEY_UN UNIQUE (UNIQUE_KEY)
-) ENGINE=InnoDB;
-INSERT INTO BATCH_JOB_SEQ (ID, UNIQUE_KEY)
-  SELECT * FROM (SELECT 0 AS ID, '0' AS UNIQUE_KEY) AS tmp
-  WHERE NOT EXISTS (SELECT * FROM BATCH_JOB_SEQ);

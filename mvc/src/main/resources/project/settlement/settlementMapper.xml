@@ -11,12 +11,12 @@
             trade_seq, member_seller_seq,
             sale_price, delivery_cost,
             commission_rate, commission, settlement_amount,
-            settlement_st, request_dtm, crt_dtm
+            settlement_st, request_dtm
         ) VALUES (
             #{trade_seq}, #{member_seller_seq},
             #{sale_price}, #{delivery_cost},
             #{commission_rate}, #{commission}, #{settlement_amount},
-            'REQUESTED', now(), now()
+            'REQUESTED', now()
         )
     </insert>
 
@@ -64,41 +64,11 @@
         WHERE trade_seq = #{trade_seq}
     </update>
 
-    <!-- 관리자 잔액 조회 (읽기 전용) -->
-    <select id="getAdminBalanceReadOnly" resultType="Long">
-        SELECT balance FROM admin_account
-        WHERE account_seq = #{account_seq}
-    </select>
-
-    <!-- 관리자 잔액 차감 (정산 완료 처리 시) -->
-    <update id="updateAdminBalance">
-        UPDATE admin_account
-        SET balance = balance - #{amount},
-            upd_dtm = now()
-        WHERE account_seq = #{account_seq}
-    </update>
-
-    <!-- 관리자 잔액 증가 (구매자 결제 완료 시 - Toss 웹훅 수신 후 호출) -->
-    <update id="increaseAdminBalance">
-        UPDATE admin_account
-        SET balance = balance + #{amount},
-            upd_dtm = now()
-        WHERE account_seq = #{account_seq}
-    </update>
-
-    <!-- 관리자 계좌 로그 (description에 이체 대상 계좌 정보 포함) -->
-    <insert id="insertAccountLog">
-        INSERT INTO admin_account_log (account_seq, settlement_seq, amount, balance_after, description, crt_dtm)
-        VALUES (#{account_seq}, #{settlement_seq}, #{amount}, #{balance_after}, #{description}, now())
-    </insert>
-
     <!-- 정산 완료 처리 (관리자가 수동 이체 후 클릭: REQUESTED → COMPLETED) -->
     <update id="confirmTransfer">
         UPDATE settlement
         SET settlement_st = 'COMPLETED',
-            settled_dtm = now(),
-            transfer_confirmed_yn = 1,
-            upd_dtm = now()
+            settled_dtm = now()
         WHERE settlement_seq = #{settlement_seq}
         AND settlement_st = 'REQUESTED'
     </update>

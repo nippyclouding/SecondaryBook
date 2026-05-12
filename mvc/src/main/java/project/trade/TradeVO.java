@@ -43,14 +43,11 @@ public class TradeVO implements Serializable {
     private Long views;                       // 조회수
 
     private LocalDateTime sale_st_dtm;      // 상품상태 변경 시간
-    private LocalDateTime book_sale_dtm;    //판매완료 시간
     private LocalDateTime upd_dtm;          // 업데이트 일자
 
     private String post_no;                 // 우편번호
     private String addr_h;                  // 주소
     private String addr_d;                  // 상세 주소
-    private String recipient_ph;            // 구매자 전화번호
-    private String recipient_nm;            // 구매자 이름
 
     private PaymentType payment_type;       // 거래방법 (안전 거래 - 토스페이, 일반 거래 - 계좌)
 

@@ -5,15 +5,7 @@
 <div class="space-y-6">
 
   <%-- ===== 요약 카드 ===== --%>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">관리자 잔액</p>
-      <p id="stl-admin-balance" class="text-2xl font-black text-gray-900 mb-3">-</p>
-      <a href="${pageContext.request.contextPath}/admin/balance/charge"
-         class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
-        + 잔액 충전
-      </a>
-    </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">정산 신청 대기</p>
       <p id="stl-requested-count" class="text-2xl font-black text-primary-600">-</p>
@@ -122,7 +114,6 @@
       .then(data => {
         if (data.success) {
           document.getElementById('stl-requested-count').textContent = (data.count || 0) + '건';
-          document.getElementById('stl-admin-balance').textContent = fmtMoney(data.adminBalance);
         }
       }).catch(() => {});
 

@@ -70,13 +70,6 @@
                         <span class="text-sm font-bold text-gray-900"><c:out value="${payment.method}"/></span>
                     </div>
 
-                    <c:if test="${not empty payment.card_company}">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-500">카드 정보</span>
-                            <span class="text-sm font-medium text-gray-900"><c:out value="${payment.card_company}"/> (<c:out value="${payment.card_number}"/>)</span>
-                        </div>
-                    </c:if>
-
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-gray-500">결제 상태</span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">

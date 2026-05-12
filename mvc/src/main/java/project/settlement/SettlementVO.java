@@ -22,13 +22,10 @@ public class SettlementVO implements Serializable {
 
     // 상태
     private SettlementStatus settlement_st; // REQUESTED, COMPLETED
-    private boolean transfer_confirmed_yn; // 관리자 이체 완료 확인 여부
 
     // 일시
     private LocalDateTime request_dtm;
     private LocalDateTime settled_dtm;
-    private LocalDateTime crt_dtm;
-    private LocalDateTime upd_dtm;
 
     // JOIN 조회용 (관리자 페이지)
     private String sale_title;

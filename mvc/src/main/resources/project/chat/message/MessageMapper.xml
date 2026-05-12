@@ -7,14 +7,12 @@
     <insert id="save" parameterType="project.chat.message.MessageVO">
         INSERT INTO chat_msg (
         chat_room_seq,
-        trade_seq,
         sender_seq,
         chat_cont,
         sent_dtm,
         read_yn
         ) VALUES (
         #{chat_room_seq},
-        #{trade_seq},
         #{sender_seq},
         #{chat_cont},
         now(),
@@ -34,7 +32,6 @@
     <select id="findByRoomSeq"
             resultType="project.chat.message.MessageVO">
         SELECT
-        cm.chat_msg_seq,
         cm.chat_room_seq,
         cm.sender_seq,
         cm.chat_cont,

@@ -87,27 +87,8 @@ CREATE TABLE IF NOT EXISTS settlement (
     commission            INT    DEFAULT 0,
     settlement_amount     INT    NOT NULL DEFAULT 0,
     settlement_st         VARCHAR(30) NOT NULL DEFAULT 'REQUESTED',
-    transfer_confirmed_yn TINYINT(1)  DEFAULT 0,
     request_dtm           TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     settled_dtm           TIMESTAMP NULL,
     crt_dtm               TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     upd_dtm               TIMESTAMP NULL
-);
-
--- ==================== admin_account ====================
-CREATE TABLE IF NOT EXISTS admin_account (
-    account_seq BIGINT AUTO_INCREMENT PRIMARY KEY,
-    balance     BIGINT NOT NULL DEFAULT 0,
-    upd_dtm     TIMESTAMP NULL
-);
-
--- ==================== admin_account_log ====================
-CREATE TABLE IF NOT EXISTS admin_account_log (
-    log_seq       BIGINT AUTO_INCREMENT PRIMARY KEY,
-    account_seq   BIGINT NOT NULL,
-    settlement_seq BIGINT NOT NULL,
-    amount        BIGINT NOT NULL,
-    balance_after BIGINT NOT NULL,
-    description   VARCHAR(200),
-    crt_dtm       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

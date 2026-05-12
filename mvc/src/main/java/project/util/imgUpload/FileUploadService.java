@@ -8,6 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -146,15 +149,13 @@ public class FileUploadService implements ImgService {
         String filename = UUID.randomUUID() + (ext.isEmpty() ? "" : "." + ext);
         String key = IMAGE_DIR + "/" + filename;
 
-        // 디렉토리 생성
-        File dir = new File(fileDir + "/" + IMAGE_DIR);
-        if (!dir.exists()) {
-            boolean created = dir.mkdirs();
-            log.info("업로드 디렉토리 생성: {} (성공: {})", dir.getAbsolutePath(), created);
-        }
+        // StandardMultipartFile.transferTo(File)는 상대 경로를 Tomcat work 디렉토리 기준으로
+        // 처리할 수 있으므로 저장 경로를 절대 경로로 고정한다.
+        Path dir = Paths.get(fileDir).toAbsolutePath().normalize().resolve(IMAGE_DIR);
+        Files.createDirectories(dir);
 
         // 로컬 디스크에 저장
-        File dest = new File(fileDir + "/" + key);
+        File dest = dir.resolve(filename).toFile();
         file.transferTo(dest);
 
         log.info("로컬 파일 업로드 성공: key={}, size={}", key, file.getSize());

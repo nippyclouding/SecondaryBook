@@ -5,7 +5,6 @@ import java.io.Serializable;
 
 @Data
 public class BookVO implements Serializable {
-    private long book_seq;
     private String book_title;
     private String isbn;    // 책 식별 번호
     private String book_author; // 책 저자명

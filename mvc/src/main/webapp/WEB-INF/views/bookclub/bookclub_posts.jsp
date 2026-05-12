@@ -648,7 +648,7 @@
                     // API 응답을 렌더링 형식에 맞게 변환
                     const books = data.map(function(book) {
                         return {
-                            seq: book.book_seq || 0,
+                            seq: 0,
                             title: book.book_title || '',
                             author: book.book_author || '',
                             img: book.book_img || 'https://via.placeholder.com/40x56?text=Book',

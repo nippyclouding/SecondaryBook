@@ -19,12 +19,9 @@
             sb.sale_st,
             sb.sale_st_dtm,
             sb.views,
-            sb.book_sale_dtm,
             sb.post_no,
             sb.addr_h,
             sb.addr_d,
-            sb.recipient_ph,
-            sb.recipient_nm,
             sb.crt_dtm,
             sb.upd_dtm,
             sb.payment_type,
@@ -182,8 +179,6 @@
 <!--        FROM sb_trade_info-->
 <!--        WHERE-->
 <!--            del_dtm IS NULL-->
-<!--            OR-->
-<!--            book_sale_dtm IS NULL-->
 <!--        ORDER BY crt_dtm DESC-->
 <!--    </select>-->
 <!--    &lt;!&ndash; 쿼리 최적화 기억하기 &ndash;&gt;-->

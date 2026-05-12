@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Data
 public class MessageVO implements Serializable {
-    private long chat_msg_seq;
     private long chat_room_seq;
     private Long trade_seq;
 

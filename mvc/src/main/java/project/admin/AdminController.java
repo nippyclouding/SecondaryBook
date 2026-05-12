@@ -18,11 +18,8 @@ import project.util.exception.InvalidRequestException;
 import project.util.logInOut.LogoutPendingManager;
 import project.util.logInOut.UserType;
 import project.member.MemberVO;
-import project.payment.TossApiService;
-import project.payment.TossPaymentResponse;
 import project.settlement.SettlementService;
 import project.settlement.SettlementStatus;
-import project.settlement.SettlementVO;
 import project.trade.TradeService;
 import project.trade.TradeVO;
 import project.util.paging.PageResult;
@@ -33,7 +30,6 @@ import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -48,16 +44,12 @@ public class AdminController {
     private final TradeService tradeService;
     private final LogoutPendingManager logoutPendingManager;
     private final SettlementService settlementService;
-    private final TossApiService tossApiService;
 
     @Value("${admin.login.code1}")
     private String adminCode1;
 
     @Value("${admin.login.code2}")
     private String adminCode2;
-
-    @Value("${api.toss.client-key}")
-    private String tossClientKey;
     // 대시보드 뷰
     @GetMapping("")
     public String dashboard(Model model) {
@@ -520,66 +512,6 @@ public class AdminController {
         return "bookclub/bookclub_detail";  // 기존 JSP 재사용
     }
 
-    // =============================================
-    // 관리자 잔액 충전 (Toss 결제)
-    // =============================================
-
-    /** 충전 폼 페이지 */
-    @GetMapping("/balance/charge")
-    public String balanceChargePage(Model model) {
-        model.addAttribute("currentBalance", settlementService.getAdminBalance());
-        model.addAttribute("tossClientKey", tossClientKey);
-        return "admin/balanceCharge";
-    }
-
-    /** Toss 결제 성공 콜백 → 승인 + DB 잔액 증가 */
-    @GetMapping("/balance/success")
-    public String balanceChargeSuccess(
-            @RequestParam String paymentKey,
-            @RequestParam String orderId,
-            @RequestParam int amount,
-            RedirectAttributes redirectAttributes) {
-
-        TossPaymentResponse tossResponse = tossApiService.confirmPayment(paymentKey, orderId, amount);
-
-        if (tossResponse == null || !"DONE".equals(tossResponse.getStatus())) {
-            String msg = tossResponse != null ? tossResponse.getMessage() : "결제 승인 실패";
-            log.error("관리자 잔액 충전 Toss 승인 실패: orderId={}, message={}", orderId, msg);
-            redirectAttributes.addFlashAttribute("chargeError", msg);
-            return "redirect:/admin/balance/charge";
-        }
-
-        try {
-            settlementService.chargeAdminBalance(paymentKey, orderId, amount);
-            redirectAttributes.addFlashAttribute("chargeSuccess",
-                    String.format("%,d원이 충전되었습니다.", amount));
-            return "redirect:/admin/balance/charge";
-        } catch (Exception e) {
-            log.error("관리자 잔액 충전 DB 처리 실패, Toss 결제 취소 시도: orderId={}", orderId, e);
-            try {
-                tossApiService.cancelPayment(paymentKey, "DB 처리 실패로 자동 취소");
-                redirectAttributes.addFlashAttribute("chargeError", "충전 처리 중 오류가 발생하여 자동 취소되었습니다.");
-            } catch (Exception cancelEx) {
-                log.error("Toss 취소 실패 — 수동 처리 필요: paymentKey={}, orderId={}, amount={}원", paymentKey, orderId, amount, cancelEx);
-                redirectAttributes.addFlashAttribute("chargeError",
-                        "결제 오류가 발생했습니다. 관리자에게 문의하세요. (주문번호: " + orderId + ")");
-            }
-            return "redirect:/admin/balance/charge";
-        }
-    }
-
-    /** Toss 결제 실패 콜백 */
-    @GetMapping("/balance/fail")
-    public String balanceChargeFail(
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String message,
-            RedirectAttributes redirectAttributes) {
-        log.warn("관리자 잔액 충전 결제 실패: code={}, message={}", code, message);
-        redirectAttributes.addFlashAttribute("chargeError",
-                message != null ? message : "결제가 취소되었습니다.");
-        return "redirect:/admin/balance/charge";
-    }
-
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseBody
     public Map<String, Object> handleConstraintViolation(ConstraintViolationException e) {
@@ -613,7 +545,6 @@ public class AdminController {
         result.put("success", true);
         result.put("list", settlementService.findByStatus(SettlementStatus.REQUESTED));
         result.put("count", settlementService.countByStatus(SettlementStatus.REQUESTED));
-        result.put("adminBalance", settlementService.getAdminBalance());
         return result;
     }
 
@@ -630,7 +561,7 @@ public class AdminController {
 
     /**
      * 이체 완료 확인 (관리자가 은행 앱에서 이체 완료 후 클릭)
-     * transfer_confirmed_yn = 1 로 업데이트
+     * settlement_st = COMPLETED 로 업데이트
      */
     @PostMapping("/api/settlement/confirm-transfer/{settlement_seq}")
     @ResponseBody

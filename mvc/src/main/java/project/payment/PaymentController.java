@@ -160,11 +160,7 @@ public class PaymentController {
         }
 
         PaymentVO payment = new PaymentVO();
-        payment.setTrade_seq(trade_seq);
-        payment.setMember_buyer_seq(buyer.getMember_seq());
-        payment.setPayment_key(paymentKey);
         payment.setAmount(serverAmount);
-        payment.setStatus(tossResponse.getStatus());
         payment.setMethod(tossResponse.getMethod());
 
         // 배송지 타입에 따라 구분해서 처리
