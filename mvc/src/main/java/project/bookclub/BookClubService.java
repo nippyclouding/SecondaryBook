@@ -89,7 +89,6 @@ public class BookClubService {
 
 
     // #1-1. 전체 독서모임 리스트 조회 (최신순 정렬, 첫 페이지)
-    @Cacheable(value = "bookClubList", key = "'latest:first:' + (#p0 != null ? #p0 : 'guest')")
     public List<BookClubVO> getBookClubList(Long memberSeq) {
         return bookClubMapper.searchAllWithSort("latest", DEFAULT_PAGE_SIZE, 0, memberSeq);
     }
@@ -277,7 +276,6 @@ public class BookClubService {
 
     // #2-8. 찜 토글 (찜 추가/취소)
     @Transactional
-    @CacheEvict(value = "bookClubList", key = "'latest:first:' + (#p1 != null ? #p1 : 'guest')")
     public boolean toggleWish(Long bookClubSeq, Long memberSeq) {
         if (bookClubSeq == null || memberSeq == null) {
             return false;
@@ -413,7 +411,6 @@ public class BookClubService {
      * #4. 독서모임 생성
      */
     @Transactional
-    @CacheEvict(value = "bookClubList", allEntries = true)
     public void createBookClub(BookClubVO vo) {
         // 1. 모임 이름 중복 체크 (리더별)
         boolean duplicated = isDuplicateForLeader(vo.getBook_club_leader_seq(), vo.getBook_club_name());
@@ -718,8 +715,7 @@ public class BookClubService {
      */
     @Transactional
     @org.springframework.cache.annotation.Caching(evict = {
-            @org.springframework.cache.annotation.CacheEvict(value = "bookClub", key = "#bookClubSeq"),
-            @org.springframework.cache.annotation.CacheEvict(value = "bookClubList", allEntries = true)
+            @org.springframework.cache.annotation.CacheEvict(value = "bookClub", key = "#bookClubSeq")
     })
     public java.util.Map<String, Object> updateBookClubSettings(
             Long bookClubSeq,
@@ -894,7 +890,7 @@ public class BookClubService {
      * @throws IllegalStateException    비즈니스 규칙 위반 시
      */
     @Transactional
-    @CacheEvict(value = "bookClubList", allEntries = true)
+    @CacheEvict(value = "bookClub", key = "#bookClubSeq")
     public java.util.Map<String, Object> leaveBookClub(Long bookClubSeq, Long memberSeq) {
         // 1. 파라미터 검증
         if (bookClubSeq == null || memberSeq == null) {

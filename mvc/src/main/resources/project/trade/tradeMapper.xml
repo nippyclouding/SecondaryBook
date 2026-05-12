@@ -519,6 +519,7 @@
         WHERE trade_seq = #{trade_seq}
           AND sale_st = 'SALE'
           AND safe_payment_st = 'PENDING'
+          AND pending_buyer_seq = #{member_buyer_seq}
     </update>
 
     <!-- 구매자의 안전결제 구매 내역 조회 -->
@@ -557,10 +558,9 @@
             WHEN t.safe_payment_st = 'PENDING' AND t.safe_payment_expire_dtm IS NOT NULL
             THEN GREATEST(0, CEIL(TIMESTAMPDIFF(SECOND, NOW(), t.safe_payment_expire_dtm)))
             ELSE 0
-            END AS remaining_seconds
+        END AS remaining_seconds
         FROM sb_trade_info t
         WHERE t.trade_seq = #{trade_seq}
-        FOR UPDATE
     </select>
     <select id="findAllImageUrlsByMember" resultType="string">
         SELECT bi.img_url

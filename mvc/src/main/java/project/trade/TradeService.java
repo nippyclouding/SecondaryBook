@@ -117,7 +117,7 @@ public class TradeService {
 
     // 리스트 : 페이징 조회
     @Cacheable(value = "tradeList",
-            key = "'page:' + #page + ':size:' + #size + ':cat:' + #searchVO.category_seq + ':word:' +#searchVO.search_word + ':sort:' + #searchVO.sort + ':saleSt:' + #searchVO.sale_st + ':bookSt:' + #searchVO.book_st")
+            key = "'page:' + #page + ':cat:' + #searchVO.category_seq + ':word:' + #searchVO.search_word + ':sort:' + #searchVO.sort + ':saleSt:' + #searchVO.sale_st + ':bookSt:' + #searchVO.book_st")
     public List<TradeVO> searchAllWithPaging(int page, int size, TradeVO searchVO) {
         int offset = (page - 1) * size;  // page가 1부터 시작한다고 가정
         return tradeMapper.findAllWithPaging(size, offset, searchVO);
@@ -152,7 +152,6 @@ public class TradeService {
     // 판매글 수정
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", key = "#trade_seq"),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -196,7 +195,6 @@ public class TradeService {
     // 판매글 삭제
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", key = "#trade_seq"),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -221,12 +219,14 @@ public class TradeService {
     }
 
     // 카테고리 조회
+    @Cacheable(value = "categoryList", key = "'all'")
     public List<TradeVO> findAllCategories() {
         return tradeMapper.findAllCategories();
     }
 
     // 찜하기 insert
     @Transactional
+    @CacheEvict(value = "tradeList", allEntries = true)
     public boolean saveLike(long trade_seq, long member_seq) {
         TradeVO trade = tradeMapper.findBySeq(trade_seq);
         if (trade == null || Long.valueOf(member_seq).equals(trade.getMember_seller_seq())) {
@@ -289,7 +289,6 @@ public class TradeService {
     // 안전 결제 요청 처리 (트랜잭션으로 상태 체크, 업데이트 원자적 처리), 5분 만료 시간 설정
     // return true : 안전 결제 요청 성공, false : 이미 안전 결제 요청 처리
     @Transactional
-    @CacheEvict(value = "trade", key = "#trade_seq")
     public boolean requestSafePayment(long trade_seq, long pending_buyer_seq) {
         // 안전 결제 진행 중이 아닌 상태라면 PENDING(안전 결제 시작) 으로 변경 + 5분 만료 시간 설정
         int updated = tradeMapper.updateSafePaymentWithExpire(trade_seq, SafePaymentStatus.PENDING, 5, pending_buyer_seq);
@@ -298,7 +297,6 @@ public class TradeService {
 
     // 안전 결제 실패, NONE 으로 update,  채팅방으로 다시 돌아가도록 하기
     @Transactional
-    @CacheEvict(value = "trade", key = "#trade_seq")
     public void cancelSafePayment(long trade_seq) {
         tradeMapper.updateSafePaymentStatus(trade_seq, SafePaymentStatus.NONE);
     }
@@ -312,7 +310,6 @@ public class TradeService {
     }
 
     @Transactional
-    @CacheEvict(value = "trade", allEntries = true)
     public int resetExpiredSafePayments() {
         return tradeMapper.resetExpiredSafePayments();
     }
@@ -321,7 +318,6 @@ public class TradeService {
     // 판매자 수동 sold 변경
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", key = "#trade_seq"),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -331,7 +327,6 @@ public class TradeService {
 
     // 구매 확정
     @Transactional
-    @CacheEvict(value = "trade", key = "#trade_seq")
     public boolean confirmPurchase(long trade_seq, long member_seq) {
         return tradeMapper.confirmPurchase(trade_seq, member_seq) > 0;
     }
@@ -339,7 +334,6 @@ public class TradeService {
     // 15일 지난 미확정 건 자동 확정
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", allEntries = true),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -350,7 +344,6 @@ public class TradeService {
     // 판매 상태 수동 업데이트 (SOLD)
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", key = "#trade_seq"),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -361,7 +354,6 @@ public class TradeService {
     // 임의 SaleStatus로 상태 변경 (SALE / RESERVED / SOLD)
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "trade", key = "#trade_seq"),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
@@ -373,7 +365,10 @@ public class TradeService {
      * 구매 확정 + 결제 완료 메시지 전송을 하나의 트랜잭션으로 통합
      */
     @Transactional
-    @CacheEvict(value = "trade", key = "#tradeSeq")
+    @Caching(evict = {
+            @CacheEvict(value = "tradeList", allEntries = true),
+            @CacheEvict(value = "tradeCount", allEntries = true)
+    })
     public void completePurchaseAndNotify(Long tradeSeq, long buyerSeq, String postNo, String addrH, String addrD) {
         // 1. 구매 확정 처리 (상태 가드로 중복 처리 방지)
         int updated = tradeMapper.updatePurchaseCompleted(tradeSeq, buyerSeq, postNo, addrH, addrD);
@@ -413,7 +408,6 @@ public class TradeService {
 
 
     @Caching(evict = {
-            @CacheEvict(value = "trade", allEntries = true),
             @CacheEvict(value = "tradeList", allEntries = true),
             @CacheEvict(value = "tradeCount", allEntries = true)
     })
