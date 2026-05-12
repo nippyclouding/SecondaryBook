@@ -5,10 +5,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@PropertySource("classpath:application.properties")
+@PropertySource(value = {
+        "classpath:application.properties",
+        "file:.env",
+        "file:mvc/.env"
+}, ignoreResourceNotFound = true)
 public class AppConfig {
     @Bean
     public ObjectMapper objectMapper() {

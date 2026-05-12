@@ -88,9 +88,7 @@ public class TradeVO implements Serializable {
     private String member_buyer_nm;
 
     public boolean checkTradeVO() {
-
         boolean result = false;
-
             if (sale_title != null && !sale_title.equals("") &&
                     book_img != null && !book_img.equals("") &&
                     book_title != null && !book_title.equals("") &&

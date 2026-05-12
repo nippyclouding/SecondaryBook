@@ -36,21 +36,28 @@ public class TradeController {
     // 판매글 단일 조회
     @GetMapping("/trade/{tradeSeq}")
     public String getSaleDetail(@PathVariable long tradeSeq, Model model, HttpSession session) {
-        tradeService.incrementViews(tradeSeq);
         TradeVO trade = tradeService.search(tradeSeq);
 
-        int wishCount = tradeService.countLikeAll(tradeSeq); // 총 찜 개수
-        boolean wished = false;
-
-        MemberVO login = (MemberVO) session.getAttribute(Const.SESSION);
-        MemberVO seller_info = tradeService.findSellerInfo(tradeSeq);   // 판매자 정보조회
-        if (login != null) {
-            wished = tradeService.isWished(tradeSeq, login.getMember_seq());    // 찜하기 눌렀는지 검증
+        // 조회수 증가
+        tradeService.incrementViews(tradeSeq);
+        if (trade.getViews() != null) {
+            trade.setViews(trade.getViews() + 1);
         }
-        model.addAttribute("seller_info", seller_info);
-        model.addAttribute("trade", trade);
-        model.addAttribute("wishCount", wishCount);
-        model.addAttribute("wished", wished);
+
+        int wishCount = tradeService.countLikeAll(tradeSeq); // 총 찜 개수
+
+        // 판매자 정보조회
+        MemberVO login = (MemberVO) session.getAttribute(Const.SESSION);
+        MemberVO seller_info = tradeService.findSellerInfo(tradeSeq);
+
+        // 로그인을 마친 유저라면 찜하기 눌렀는지 검증
+        boolean wished = false;
+        if (login != null) wished = tradeService.isWished(tradeSeq, login.getMember_seq());
+
+        model.addAttribute("seller_info", seller_info); // 판매자 정보
+        model.addAttribute("trade", trade);             // 거래 정보
+        model.addAttribute("wishCount", wishCount);     // 판매글 총 찜 개수
+        model.addAttribute("wished", wished);           // 찜하기 눌렀는지에 대한 정보
 
         return "trade/tradedetail";
     }

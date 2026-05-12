@@ -1,8 +1,13 @@
 # Maven 빌드 결과물
 target/
+mvc/target/
 
 # 민감 정보 (절대 커밋 금지)
-src/main/resources/application.properties
+mvc/src/main/resources/application-*.properties
+mvc/src/main/resources/application.yml
+mvc/src/main/resources/application-*.yml
+.env
+mvc/.env
 
 # IDE
 .idea/
@@ -26,3 +31,10 @@ logs/
 
 # Cargo (Tomcat)
 cargo/
+mvc/cargo/
+
+# 런타임 업로드 이미지
+mvc/src/main/webapp/img/*
+!mvc/src/main/webapp/img/no-image.png
+!mvc/src/main/webapp/img/presentation/
+!mvc/src/main/webapp/img/presentation/**

@@ -100,9 +100,7 @@ public class TradeService {
     }
 
     // 판매글 단일 조회
-    @Cacheable(value = "trade", key = "#trade_seq", unless = "#result == null")
     public TradeVO search(long trade_seq) {
-        // 쿼리를 2번 조회하기 때문에 cache
         TradeVO findTrade = tradeMapper.findBySeq(trade_seq);
 
         if (findTrade == null) {

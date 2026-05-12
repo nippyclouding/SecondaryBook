@@ -41,6 +41,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NotFoundException.class) // 404
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Object handleNotFoundException(NotFoundException e, HttpServletRequest request, Model model) {
         log.warn("리소스 없음: uri={}, message={}", request.getRequestURI(), e.getMessage());
 
