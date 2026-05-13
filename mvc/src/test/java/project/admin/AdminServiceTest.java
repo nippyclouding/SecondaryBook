@@ -273,13 +273,13 @@ class AdminServiceTest {
         }
 
         @Test
-        @DisplayName("그 외 액션(RESERVED, SOLD 등)은 해당 상태로 업데이트한다")
-        void otherAction() {
+        @DisplayName("SOLD 액션으로 거래를 판매완료 상태로 업데이트한다")
+        void soldTrade() {
             // when
-            adminService.handleTradeAction(10L, "RESERVED");
+            adminService.handleTradeAction(10L, "SOLD");
 
             // then
-            verify(adminMapper).updateTradeStatus(10L, "RESERVED");
+            verify(adminMapper).updateTradeStatus(10L, "SOLD");
         }
     }
 

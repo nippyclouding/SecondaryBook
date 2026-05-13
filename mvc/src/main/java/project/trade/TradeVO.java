@@ -38,7 +38,7 @@ public class TradeVO implements Serializable {
     private Integer sale_price;             // 판매 가격
     private Integer delivery_cost;          // 배송비
     private String sale_rg;                 // 판매 지역
-    private SaleStatus sale_st;             // 판매 상태 (판매중, 예약, 완료)
+    private SaleStatus sale_st;             // 판매 상태 (판매중, 완료)
 
     private Long views;                       // 조회수
 

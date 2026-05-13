@@ -43,9 +43,6 @@
                         <c:when test="${trade.sale_st == 'SOLD'}">
                             <span class="text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">판매완료</span>
                         </c:when>
-                        <c:otherwise>
-                            <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">예약중</span>
-                        </c:otherwise>
                     </c:choose>
                     <c:if test="${trade.settlement_st == 'REQUESTED'}">
                         <span class="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-md">정산 처리중</span>
@@ -240,7 +237,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        alert('정산 신청이 완료되었습니다.\n매일 새벽 배치 처리 후 정산됩니다.');
+                        alert('정산 신청이 완료되었습니다.\n관리자가 확인 후 수수료 제외 후 계좌로 지급될 예정입니다.');
                         if (typeof loadTab === 'function') loadTab(null, 'sales');
                         else location.reload();
                     } else {

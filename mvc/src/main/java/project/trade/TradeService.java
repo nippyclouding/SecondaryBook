@@ -351,7 +351,7 @@ public class TradeService {
         return tradeMapper.updateStatus(trade_seq, SaleStatus.SOLD) > 0;
     }
 
-    // 임의 SaleStatus로 상태 변경 (SALE / RESERVED / SOLD)
+    // 임의 SaleStatus로 상태 변경 (SALE / SOLD)
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "tradeList", allEntries = true),

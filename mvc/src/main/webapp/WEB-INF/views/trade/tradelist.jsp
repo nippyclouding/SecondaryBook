@@ -19,11 +19,6 @@
                                         판매완료
                                     </div>
                                 </c:when>
-                                <c:when test="${trade.sale_st.name() == 'RESERVED'}">
-                                    <div class="bg-orange-500/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                        예약중
-                                    </div>
-                                </c:when>
                                 <c:when test="${trade.sale_st.name() == 'SALE'}">
                                     <div class="bg-green-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                                         판매중

@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     sale_price          INT          NOT NULL DEFAULT 0,
     delivery_cost       INT          NOT NULL DEFAULT 0,
     sale_rg             VARCHAR(100),
-    sale_st             VARCHAR(20)  DEFAULT 'SALE',
+    sale_st             VARCHAR(20)  DEFAULT 'SALE' CHECK (sale_st IN ('SALE', 'SOLD')),
     sale_st_dtm         TIMESTAMP NULL,
     views               BIGINT       DEFAULT 0,
     wish_cnt            BIGINT       DEFAULT 0,

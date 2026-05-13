@@ -83,7 +83,7 @@ public class AdminService {
             adminMapper.updateTradeStatus(seq, "BAN"); // 판매 금지 상태
         } else if ("SALE".equals(action)) {
             adminMapper.updateTradeStatus(seq, "SALE"); // 판매 중 상태로 복구 (Undo)
-        } else if ("RESERVED".equals(action) || "SOLD".equals(action)) {
+        } else if ("SOLD".equals(action)) {
             adminMapper.updateTradeStatus(seq, action);
         }
         // 그 외 알 수 없는 action은 무시

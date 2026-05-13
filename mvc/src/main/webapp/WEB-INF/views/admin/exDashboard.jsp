@@ -156,7 +156,6 @@
 <%--                                </span>--%>
 <%--              <div class="hidden group-hover:block absolute top-full left-0 mt-1 bg-white border border-gray-100 shadow-xl rounded-lg py-1 z-20 w-32 animate-[fadeIn_0.1s_ease-out]">--%>
 <%--                <button class="w-full text-left px-4 py-2 text-xs hover:bg-green-50 text-green-600 font-bold whitespace-nowrap">판매중</button>--%>
-<%--                <button class="w-full text-left px-4 py-2 text-xs hover:bg-orange-50 text-orange-600 font-bold whitespace-nowrap">예약중</button>--%>
 <%--                <button class="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-600 font-bold whitespace-nowrap">판매완료</button>--%>
 <%--              </div>--%>
 <%--            </div>--%>

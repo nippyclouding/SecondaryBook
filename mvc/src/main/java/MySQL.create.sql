@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     sale_price                  INT,
     delivery_cost               INT                 DEFAULT 0,
     sale_rg                     VARCHAR(100),
-    sale_st                     ENUM('SALE', 'RESERVED', 'SOLD') DEFAULT 'SALE',
+    sale_st                     ENUM('SALE', 'SOLD') DEFAULT 'SALE',
     sale_st_dtm                 TIMESTAMP           NULL,
     views                       BIGINT              DEFAULT 0,
     wish_cnt                    BIGINT              DEFAULT 0,

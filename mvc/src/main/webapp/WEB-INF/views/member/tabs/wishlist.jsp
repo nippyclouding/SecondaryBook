@@ -151,8 +151,6 @@
                 let statusBadge = '';
                 if (item.sale_st === 'SALE') {
                     statusBadge = '<span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">판매중</span>';
-                } else if (item.sale_st === 'RESERVED') {
-                    statusBadge = '<span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">예약중</span>';
                 } else {
                     statusBadge = '<span class="text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">판매완료</span>';
                 }
