@@ -111,21 +111,40 @@ public class PaymentController {
             return "redirect:/payments/result?status=fail";
         }
 
+        MemberVO buyer = (MemberVO) session.getAttribute(Const.SESSION);
+        if (buyer == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "세션이 만료되었습니다. 다시 결제를 시도해주세요.");
+            return "redirect:/payments/result?status=fail";
+        }
+
         // 서버에서 결제 금액 직접 계산 (클라이언트 amount를 신뢰하지 않음)
         int serverAmount = trade.getSale_price() + trade.getDelivery_cost();
 
         // 검증 - 클라이언트 금액과 서버 금액 불일치 시 조작 시도로 간주
         if (serverAmount != amount) {
             log.error("결제 금액 조작 의심: trade_seq={}, 클라이언트금액={}, 서버금액={}", trade_seq, amount, serverAmount);
-            tradeService.cancelSafePayment(trade_seq);
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
             redirectAttributes.addFlashAttribute("errorMessage", "결제 금액이 일치하지 않습니다.");
             return "redirect:/payments/result?status=fail";
         }
 
         // 검증 - 판매 상태 (판매된 제품이거나 pending이 아닌 제품일 경우 실패)
         if (trade.getSale_st() == SaleStatus.SOLD || trade.getSafe_payment_st() != SafePaymentStatus.PENDING) {
-            tradeService.cancelSafePayment(trade_seq);
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
             redirectAttributes.addFlashAttribute("errorMessage", "이미 판매 완료된 상품이거나 결제 요청시간이 만료된 상품입니다.");
+            return "redirect:/payments/result?status=fail";
+        }
+
+        // 검증 - 결제 대상 구매자와 서버 기준 남은 시간 확인
+        PaymentVO paymentCheckBeforeConfirm = tradeService.getPaymentCheckInfo(trade_seq);
+        if (!isCurrentPendingBuyer(paymentCheckBeforeConfirm, buyer.getMember_seq())) {
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
+            redirectAttributes.addFlashAttribute("errorMessage", "결제 권한이 없거나 결제 요청이 만료되었습니다.");
+            return "redirect:/payments/result?status=fail";
+        }
+        if (paymentCheckBeforeConfirm.getRemaining_seconds() <= 0) {
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
+            redirectAttributes.addFlashAttribute("errorMessage", "결제 시간이 만료되었습니다. 다시 시도해주세요.");
             return "redirect:/payments/result?status=fail";
         }
 
@@ -134,25 +153,16 @@ public class PaymentController {
 
         // 승인 실패 시
         if (tossResponse == null || !"DONE".equals(tossResponse.getStatus())) {
-            tradeService.cancelSafePayment(trade_seq);
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
             redirectAttributes.addFlashAttribute("errorMessage", tossResponse != null ? tossResponse.getMessage() : "결제 승인 실패");
             return "redirect:/payments/result?status=fail";
         }
 
 
         // 승인 성공 시 :
-        MemberVO buyer = (MemberVO) session.getAttribute(Const.SESSION);
-        if (buyer == null) {
-            log.warn("결제 승인 후 세션 누락 - 자동 취소: trade_seq={}", trade_seq);
-            tossApiService.cancelPayment(paymentKey, "세션 만료로 자동 취소");
-            redirectAttributes.addFlashAttribute("errorMessage", "세션이 만료되었습니다. 결제가 자동 취소되었습니다.");
-            return "redirect:/payments/result?status=fail";
-        }
-
         // 검증 - 안전결제 대상 구매자인지 재확인 (IDOR 방지)
         PaymentVO paymentCheck = tradeService.getPaymentCheckInfo(trade_seq);
-        if (paymentCheck == null || paymentCheck.getPending_buyer_seq() == null
-                || !paymentCheck.getPending_buyer_seq().equals(buyer.getMember_seq())) {
+        if (!isCurrentPendingBuyer(paymentCheck, buyer.getMember_seq())) {
             log.warn("결제 구매자 불일치 또는 결제 정보 없음: trade_seq={}, 세션={}", trade_seq, buyer.getMember_seq());
             tossApiService.cancelPayment(paymentKey, "결제 정보 불일치로 자동 취소");
             redirectAttributes.addFlashAttribute("errorMessage", "결제 권한이 없습니다.");
@@ -171,6 +181,7 @@ public class PaymentController {
                     || addr_h.length() >= 180 || addr_d.length() >= 180) {
                 log.warn("배송지 정보 오류 - 자동 취소: trade_seq={}", trade_seq);
                 tossApiService.cancelPayment(paymentKey, "배송지 정보 오류로 자동 취소");
+                handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
                 redirectAttributes.addFlashAttribute("errorMessage", "배송지 정보가 올바르지 않습니다. 결제가 자동 취소되었습니다.");
                 return "redirect:/payments/result?status=fail";
             }
@@ -185,6 +196,7 @@ public class PaymentController {
         } else {
             log.warn("잘못된 배송지 타입 - 자동 취소: trade_seq={}, addr_type={}", trade_seq, addr_type);
             tossApiService.cancelPayment(paymentKey, "배송지 타입 오류로 자동 취소");
+            handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
             redirectAttributes.addFlashAttribute("errorMessage", "배송지 정보가 올바르지 않습니다. 결제가 자동 취소되었습니다.");
             return "redirect:/payments/result?status=fail";
         }
@@ -197,6 +209,7 @@ public class PaymentController {
             log.error("결제 DB 처리 실패, 토스 결제 취소 시도: trade_seq={}", trade_seq, e);
             try {
                 tossApiService.cancelPayment(paymentKey, "결제 처리 중 서버 오류로 자동 취소");
+                handleFailedSafePayment(trade_seq, buyer.getMember_seq(), true);
                 redirectAttributes.addFlashAttribute("errorMessage", "결제 처리 중 오류가 발생하여 자동 취소되었습니다. 다시 시도해주세요.");
             } catch (Exception cancelEx) {
                 // 취소도 실패 → 수동 환불 필요, 운영팀 알림
@@ -221,6 +234,29 @@ public class PaymentController {
         return "payment/fail";
     }
 
+    private boolean handleFailedSafePayment(Long trade_seq, Long member_seq, boolean sendMessage) {
+        PaymentVO paymentCheck = tradeService.getPaymentCheckInfo(trade_seq);
+        if (!isCurrentPendingBuyer(paymentCheck, member_seq)) {
+            log.warn("결제 실패 처리 무시: 현재 결제 구매자가 아님. trade_seq={}, member_seq={}", trade_seq, member_seq);
+            return false;
+        }
+
+        boolean canceled = tradeService.cancelSafePaymentForBuyer(trade_seq, member_seq);
+        if (canceled) {
+            if (sendMessage) {
+                sendPaymentFailedMessage(trade_seq, member_seq);
+            }
+            log.info("결제 실패로 안전결제 상태 초기화: trade_seq={}, member_seq={}", trade_seq, member_seq);
+        }
+        return canceled;
+    }
+
+    private boolean isCurrentPendingBuyer(PaymentVO paymentCheck, Long memberSeq) {
+        return paymentCheck != null
+                && paymentCheck.getPending_buyer_seq() != null
+                && paymentCheck.getPending_buyer_seq().equals(memberSeq);
+    }
+
     @GetMapping("/payments/fail")
     public String fail(@RequestParam(required = false) String code,
                        @RequestParam(required = false) String message,
@@ -232,9 +268,7 @@ public class PaymentController {
             TradeVO trade = tradeService.search(trade_seq);
             // 채팅방 참여자(구매자)인지 확인 (결제 실패 시점에서 member_buyer_seq는 아직 설정되지 않았으므로 채팅방으로 검증)
             if (trade != null && chatroomService.isBuyerOfTrade(trade_seq, sessionMember.getMember_seq())) {
-                tradeService.cancelSafePayment(trade_seq); // 1.안전결제 상태를 NONE 으로 변경 (재시도 가능)
-                sendPaymentFailedMessage(trade_seq, sessionMember.getMember_seq()); // 2.채팅방에 결제 실패 메시지 전송
-                log.info("결제 실패로 안전결제 상태 초기화: trade_seq={}", trade_seq);
+                handleFailedSafePayment(trade_seq, sessionMember.getMember_seq(), true);
             } else {
                 return "redirect:/"; // 구매자가 아닌 경우 홈으로 리다이렉트 (url로 거래 접근 방지)
             }
@@ -247,10 +281,21 @@ public class PaymentController {
         return "payment/fail";
     }
 
-    // 결제 타임아웃 처리 (프론트에서 5분 경과 시 또는 페이지 이탈 시 호출)
+    // 결제 취소 처리 (토스 결제창 취소 또는 결제 페이지 이탈 시 호출)
+    @PostMapping("/payments/cancel")
+    @ResponseBody
+    public Map<String, Object> cancel(@RequestParam Long trade_seq, HttpSession session) {
+        return failPendingPayment(trade_seq, session, "결제가 취소되었습니다.");
+    }
+
+    // 결제 타임아웃 처리 (프론트에서 5분 경과 시 호출)
     @PostMapping("/payments/timeout")
     @ResponseBody
     public Map<String, Object> timeout(@RequestParam Long trade_seq, HttpSession session) {
+        return failPendingPayment(trade_seq, session, "결제 시간이 만료되었습니다.");
+    }
+
+    private Map<String, Object> failPendingPayment(Long trade_seq, HttpSession session, String successMessage) {
         Map<String, Object> result = new HashMap<>();
 
         // 검증 : 세션 검증
@@ -269,15 +314,10 @@ public class PaymentController {
             return result;
         }
 
-        // 1. 안전결제 상태를 NONE으로 변경 (재시도 가능)
-        tradeService.cancelSafePayment(trade_seq);
-        log.info("결제 타임아웃으로 안전결제 상태 초기화: trade_seq={}", trade_seq);
+        boolean canceled = handleFailedSafePayment(trade_seq, sessionMember.getMember_seq(), true);
 
-        // 2. 채팅방에 결제 실패 메시지 전송
-        sendPaymentFailedMessage(trade_seq, sessionMember.getMember_seq());
-
-        result.put("success", true);
-        result.put("message", "결제 시간이 만료되었습니다.");
+        result.put("success", canceled);
+        result.put("message", canceled ? successMessage : "진행 중인 결제를 찾을 수 없습니다.");
         return result;
     }
 

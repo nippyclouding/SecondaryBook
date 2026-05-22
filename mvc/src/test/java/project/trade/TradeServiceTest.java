@@ -483,6 +483,34 @@ class TradeServiceTest {
         }
 
         @Test
+        @DisplayName("안전결제 구매자 취소 - 현재 구매자이면 NONE 상태로 복구")
+        void 안전결제_구매자취소_현재구매자이면_NONE복구() {
+            // given
+            when(tradeMapper.updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 2L)).thenReturn(1);
+
+            // when
+            boolean result = tradeService.cancelSafePaymentForBuyer(100L, 2L);
+
+            // then
+            assertThat(result).isTrue();
+            verify(tradeMapper).updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 2L);
+        }
+
+        @Test
+        @DisplayName("안전결제 구매자 취소 - 현재 구매자가 아니면 false 반환")
+        void 안전결제_구매자취소_현재구매자가아니면_false() {
+            // given
+            when(tradeMapper.updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 999L)).thenReturn(0);
+
+            // when
+            boolean result = tradeService.cancelSafePaymentForBuyer(100L, 999L);
+
+            // then
+            assertThat(result).isFalse();
+            verify(tradeMapper).updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 999L);
+        }
+
+        @Test
         @DisplayName("만료 시간 조회 - 값이 있을 때")
         void 만료시간_값있음() {
             // given

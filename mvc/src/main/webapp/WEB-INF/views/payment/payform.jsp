@@ -126,6 +126,7 @@
                     <input type="checkbox" id="agreeCheckbox" class="mt-1">
                     <span class="text-[11px] text-gray-500 leading-tight">주문 정보 확인 및 개인정보 제공에 동의합니다. (필수)</span>
                 </label>
+                <p id="agreeError" class="hidden text-xs text-red-500 font-semibold mb-3">필수 동의 항목을 확인해주세요.</p>
                 <button id="payBtn" disabled class="w-full py-4 bg-gray-300 text-gray-500 rounded-2xl font-bold text-lg transition-all">결제하기</button>
             </div>
         </div>
@@ -202,67 +203,10 @@
                });
            });
 
-           // 4. 결제 관련 (Toss & Button)
-               document.getElementById('agreeCheckbox').addEventListener('change', function() {
-                   const btn = document.getElementById('payBtn');
-                   btn.disabled = !this.checked;
-                   btn.classList.toggle('bg-primary-500', this.checked);
-                   btn.classList.toggle('text-white', this.checked);
-                   btn.classList.toggle('cursor-pointer', this.checked);
-               });
+	           // 4. 결제 관련 (Toss & Button)
+	               const tossPayments = TossPayments("test_ck_KNbdOvk5rka22P9eoqA43n07xlzm");
 
-               const tossPayments = TossPayments("test_ck_KNbdOvk5rka22P9eoqA43n07xlzm");
-
-               document.getElementById('payBtn').addEventListener('click', function() {
-                   // --- 배송지 정보 수집 시작 ---
-                   const addrType = document.querySelector('input[name="addr_type"]:checked').value;
-                   let addrParams = "&addr_type=" + addrType;
-
-                   if (addrType === 'existing') {
-                       // '내 배송지 선택'인 경우 화면에 렌더링된 텍스트 가져오기
-                       const postNo = document.getElementById('addrPostNo')?.innerText || "";
-                       const addrH = document.getElementById('addrH')?.innerText || "";
-                       const addrD = document.getElementById('addrD')?.innerText || "";
-
-                       addrParams += "&post_no=" + encodeURIComponent(postNo);
-                       addrParams += "&addr_h=" + encodeURIComponent(addrH);
-                       addrParams += "&addr_d=" + encodeURIComponent(addrD);
-                   }
-                   else if (addrType === 'manual') {
-                       // '직접 등록'인 경우 input 필드 값 가져오기
-                       const postNo = document.getElementById('newPostNo').value;
-                       const addrH = document.getElementById('newAddrH').value;
-                       const addrD = document.getElementById('newAddrD').value;
-
-                       if(!postNo || !addrH) {
-                           alert("주소를 입력해주세요.");
-                           return;
-                       }
-
-                       // --- 글자 수 제한 체크 (180자) ---
-                           if (addrH.length > 180 || addrD.length > 180) {
-                               alert("주소 정보가 너무 깁니다. 180자 이내로 입력해주세요.");
-                               return;
-                           }
-
-                       addrParams += "&post_no=" + encodeURIComponent(postNo);
-                       addrParams += "&addr_h=" + encodeURIComponent(addrH);
-                       addrParams += "&addr_d=" + encodeURIComponent(addrD);
-                   }
-                   // 'direct'인 경우 addr_type만 넘어가고 나머지는 백엔드에서 null 처리된다
-
-                   tossPayments.requestPayment("토스페이", {
-                       amount: Number("${trade.sale_price}") + Number("${trade.delivery_cost}"),
-                       orderId: "ORDER_" + "${trade.trade_seq}" + "_" + new Date().getTime(),
-                       orderName: "${trade.book_title}",
-                       customerName: "${sessionScope.loginSess.member_nicknm}",
-                       // successUrl 뒤에 수집한 addrParams를 붙여줍니다.
-                       successUrl: window.location.origin + "/payments/success?trade_seq=${trade.trade_seq}" + addrParams,
-                       failUrl: window.location.origin + "/payments/fail?trade_seq=${trade.trade_seq}"
-                   });
-               });
-
-               const salePrice = Number("${trade.sale_price}");
+	               const salePrice = Number("${trade.sale_price}");
                const deliveryCost = Number("${trade.delivery_cost}");
                const totalAmount = salePrice + deliveryCost;
                const memberNicknm = "${sessionScope.loginSess.member_nicknm}";
@@ -272,7 +216,8 @@
                // ========== 결제 타이머 ==========
                let remainingSeconds = Number("${remainingSeconds}") || 300; // 서버에서 받은 남은 시간 (기본 5분)
                let timerInterval = null;
-               let isPaymentProcessing = false; // 결제 진행 중 플래그
+               let isPaymentProcessing = false; // 토스 결제창 이동/처리 중 플래그
+               let paymentFinalized = false; // 성공/실패 페이지 이동 또는 취소 처리 완료 여부
 
                function formatTime(seconds) {
                    const mins = Math.floor(seconds / 60);
@@ -307,37 +252,40 @@
                    }, 1000);
                }
 
-               function handleTimeout() {
-                   // 타임아웃 API 호출
-                   fetch('/payments/timeout?trade_seq=' + tradeSeq, {
+               function postPaymentState(endpoint) {
+                   return fetch(endpoint + '?trade_seq=' + tradeSeq, {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                   }).then(function() {
-                       alert('결제 시간이 만료되었습니다. 다시 시도해주세요.');
-                       window.location.href = '/payments/fail?trade_seq=' + tradeSeq + '&message=' + encodeURIComponent('결제 시간 만료');
-                   }).catch(function() {
-                       window.location.href = '/payments/fail?trade_seq=' + tradeSeq + '&message=' + encodeURIComponent('결제 시간 만료');
                    });
                }
 
-               // 페이지 이탈 감지 (다른 사이트로 이동, 탭 닫기 등)
-               function handlePageLeave() {
-                   if (isPaymentProcessing) return; // 결제 진행 중이면 무시
-
-                   // sendBeacon으로 비동기 요청 (페이지 닫혀도 전송됨)
-                   navigator.sendBeacon('/payments/timeout?trade_seq=' + tradeSeq);
+               function redirectFail(message) {
+                   paymentFinalized = true;
+                   window.location.href = '/payments/fail?trade_seq=' + tradeSeq + '&message=' + encodeURIComponent(message);
                }
 
-               // beforeunload 이벤트 (페이지 이탈 시)
-               window.addEventListener('beforeunload', function(e) {
-                   if (isPaymentProcessing) return; // 결제 진행 중이면 무시
+               function handleTimeout() {
+                   postPaymentState('/payments/timeout').then(function() {
+                       alert('결제 시간이 만료되었습니다. 다시 시도해주세요.');
+                       redirectFail('결제 시간 만료');
+                   }).catch(function() {
+                       redirectFail('결제 시간 만료');
+                   });
+               }
 
-                   handlePageLeave();
+               function cancelPaymentAttempt(message, redirect) {
+                   paymentFinalized = true;
+                   return postPaymentState('/payments/cancel').finally(function() {
+                       if (redirect) {
+                           redirectFail(message);
+                       }
+                   });
+               }
 
-                   // 경고 메시지 표시 (일부 브라우저에서만 동작)
-                   e.preventDefault();
-                   e.returnValue = '결제가 진행 중입니다. 페이지를 떠나시겠습니까?';
-                   return e.returnValue;
+               // 결제 페이지를 실제로 벗어나면 PENDING을 즉시 해제한다.
+               window.addEventListener('pagehide', function() {
+                   if (isPaymentProcessing || paymentFinalized) return;
+                   navigator.sendBeacon('/payments/cancel?trade_seq=' + tradeSeq);
                });
 
                // 페이지 로드 시 타이머 시작
@@ -353,9 +301,45 @@
                // 현재 도메인 기준 URL 생성
                const baseUrl = window.location.origin;
 
-               const payBtn = document.getElementById('payBtn');
-               const agreeCheckbox = document.getElementById('agreeCheckbox');
-               const agreeError = document.getElementById('agreeError');
+	               const payBtn = document.getElementById('payBtn');
+	               const agreeCheckbox = document.getElementById('agreeCheckbox');
+	               const agreeError = document.getElementById('agreeError');
+
+	               function buildAddressParams() {
+	                   const selectedAddrType = document.querySelector('input[name="addr_type"]:checked');
+	                   const addrType = selectedAddrType ? selectedAddrType.value : "";
+	                   let addrParams = "&addr_type=" + encodeURIComponent(addrType);
+
+	                   if (addrType === 'existing') {
+	                       const postNo = document.getElementById('addrPostNo')?.innerText || "";
+	                       const addrH = document.getElementById('addrH')?.innerText || "";
+	                       const addrD = document.getElementById('addrD')?.innerText || "";
+
+	                       addrParams += "&post_no=" + encodeURIComponent(postNo);
+	                       addrParams += "&addr_h=" + encodeURIComponent(addrH);
+	                       addrParams += "&addr_d=" + encodeURIComponent(addrD);
+	                   } else if (addrType === 'manual') {
+	                       const postNo = document.getElementById('newPostNo').value;
+	                       const addrH = document.getElementById('newAddrH').value;
+	                       const addrD = document.getElementById('newAddrD').value;
+
+	                       if (!postNo || !addrH) {
+	                           alert("주소를 입력해주세요.");
+	                           return null;
+	                       }
+
+	                       if (addrH.length > 180 || addrD.length > 180) {
+	                           alert("주소 정보가 너무 깁니다. 180자 이내로 입력해주세요.");
+	                           return null;
+	                       }
+
+	                       addrParams += "&post_no=" + encodeURIComponent(postNo);
+	                       addrParams += "&addr_h=" + encodeURIComponent(addrH);
+	                       addrParams += "&addr_d=" + encodeURIComponent(addrD);
+	                   }
+
+	                   return addrParams;
+	               }
 
                // 체크박스 상태에 따라 버튼 활성화/비활성화
                agreeCheckbox.addEventListener('change', function() {
@@ -377,23 +361,29 @@
                        return;
                    }
 
-                   // 결제 진행 중 플래그 설정 (이탈 감지 무시)
-                   isPaymentProcessing = true;
+	                   // 결제 진행 중 플래그 설정 (이탈 감지 무시)
+	                   isPaymentProcessing = true;
+	                   const addrParams = buildAddressParams();
+	                   if (addrParams === null) {
+	                       isPaymentProcessing = false;
+	                       return;
+	                   }
 
-                   tossPayments.requestPayment("토스페이", {
-                       amount: totalAmount,
-                       orderId: "ORDER_" + tradeSeq + "_" + new Date().getTime(),
-                       orderName: bookTitle,
-                       customerName: memberNicknm,
-                       successUrl: baseUrl + "/payments/success?trade_seq=" + tradeSeq,
-                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq
-                   }).catch(function(error) {
+	                   tossPayments.requestPayment("토스페이", {
+	                       amount: totalAmount,
+	                       orderId: "ORDER_" + tradeSeq + "_" + new Date().getTime(),
+	                       orderName: bookTitle,
+	                       customerName: memberNicknm,
+	                       successUrl: baseUrl + "/payments/success?trade_seq=" + tradeSeq + addrParams,
+	                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq
+	                   }).catch(function(error) {
                        isPaymentProcessing = false; // 결제 취소/실패 시 플래그 해제
 
                        if (error.code === "USER_CANCEL") {
-                           // 사용자가 결제창을 닫음 - 타이머는 계속 진행
+                           cancelPaymentAttempt('결제가 취소되었습니다.', true);
                        } else {
                            alert(error.message);
+                           cancelPaymentAttempt(error.message || '결제에 실패했습니다.', true);
                        }
                    });
                });

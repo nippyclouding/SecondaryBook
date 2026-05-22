@@ -47,6 +47,10 @@ public interface TradeMapper {
     int updateSafePaymentStatus(@Param("trade_seq") long trade_seq,
                                 @Param("status") SafePaymentStatus status); // 안전 결제 상태 업데이트
 
+    int updateSafePaymentStatusForBuyer(@Param("trade_seq") long trade_seq,
+                                        @Param("status") SafePaymentStatus status,
+                                        @Param("pending_buyer_seq") long pending_buyer_seq);
+
     // 안전결제 만료 시간 관련
     int updateSafePaymentWithExpire(@Param("trade_seq") long trade_seq,
                                     @Param("status") SafePaymentStatus status, // 상태

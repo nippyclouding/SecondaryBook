@@ -414,6 +414,18 @@
           AND safe_payment_st = 'PENDING'
     </update>
 
+    <!-- 안전결제 취소 (현재 PENDING 구매자 본인일 때만 NONE으로 변경 가능) -->
+    <update id="updateSafePaymentStatusForBuyer">
+        UPDATE sb_trade_info
+        SET safe_payment_st = #{status},
+            safe_payment_expire_dtm = NULL,
+            pending_buyer_seq = NULL,
+            upd_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+          AND safe_payment_st = 'PENDING'
+          AND pending_buyer_seq = #{pending_buyer_seq}
+    </update>
+
     <!-- 안전결제 상태 + 만료시간 업데이트 -->
     <update id="updateSafePaymentWithExpire">
         UPDATE sb_trade_info

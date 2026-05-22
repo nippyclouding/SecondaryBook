@@ -295,10 +295,17 @@ public class TradeService {
         return updated > 0; // 0이면 이미 다른 사용자가 PENDING 중
     }
 
-    // 안전 결제 실패, NONE 으로 update,  채팅방으로 다시 돌아가도록 하기
+    // 안전 결제 실패, NONE 으로 update, 채팅방으로 다시 돌아가도록 하기
     @Transactional
     public void cancelSafePayment(long trade_seq) {
         tradeMapper.updateSafePaymentStatus(trade_seq, SafePaymentStatus.NONE);
+    }
+
+    // 현재 안전결제를 진행 중인 구매자 본인일 때만 취소한다.
+    @Transactional
+    public boolean cancelSafePaymentForBuyer(long trade_seq, long pending_buyer_seq) {
+        int updated = tradeMapper.updateSafePaymentStatusForBuyer(trade_seq, SafePaymentStatus.NONE, pending_buyer_seq);
+        return updated > 0;
     }
 
 
