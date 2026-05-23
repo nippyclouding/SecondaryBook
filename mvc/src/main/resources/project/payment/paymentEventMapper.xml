@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.payment.PaymentEventMapper">
+    <insert id="save" parameterType="project.payment.PaymentEventVO"
+            useGeneratedKeys="true" keyProperty="payment_event_seq">
+        INSERT INTO payment_event_log (
+            trade_seq, member_seq, event_type, payment_key, order_id, amount,
+            method, toss_status, toss_code, toss_message, created_dtm
+        ) VALUES (
+            #{trade_seq}, #{member_seq}, #{event_type}, #{payment_key}, #{order_id}, #{amount},
+            #{method}, #{toss_status}, #{toss_code}, #{toss_message}, now()
+        )
+    </insert>
+
+    <select id="findUnresolvedConfirmUnknownEvents" resultType="project.payment.PaymentEventVO">
+        SELECT e.*
+        FROM payment_event_log e
+        INNER JOIN (
+            SELECT trade_seq, MAX(payment_event_seq) AS latest_event_seq
+            FROM payment_event_log
+            GROUP BY trade_seq
+        ) latest ON latest.latest_event_seq = e.payment_event_seq
+        INNER JOIN sb_trade_info t ON t.trade_seq = e.trade_seq
+        WHERE t.safe_payment_st = 'CONFIRMING'
+          AND (
+            e.event_type IN ('CONFIRM_UNKNOWN', 'CANCEL_FAILED', 'RECONCILE_REQUIRED')
+            OR (e.event_type = 'CONFIRMING' AND e.created_dtm &lt; DATE_SUB(NOW(), INTERVAL 10 MINUTE))
+          )
+    </select>
+</mapper>

@@ -204,7 +204,7 @@
            });
 
 	           // 4. 결제 관련 (Toss & Button)
-	               const tossPayments = TossPayments("test_ck_KNbdOvk5rka22P9eoqA43n07xlzm");
+	               const tossPayments = TossPayments("${tossClientKey}");
 
 	               const salePrice = Number("${trade.sale_price}");
                const deliveryCost = Number("${trade.delivery_cost}");
@@ -212,6 +212,8 @@
                const memberNicknm = "${sessionScope.loginSess.member_nicknm}";
                const bookTitle = "${trade.book_title}";
                const tradeSeq = "${trade.trade_seq}";
+               const failureToken = "${failureToken}";
+               const failureAttempt = "${failureAttempt}";
 
                // ========== 결제 타이머 ==========
                let remainingSeconds = Number("${remainingSeconds}") || 300; // 서버에서 받은 남은 시간 (기본 5분)
@@ -253,7 +255,10 @@
                }
 
                function postPaymentFailure(reason) {
-                   return fetch('/payments/failure?trade_seq=' + tradeSeq + '&reason=' + encodeURIComponent(reason), {
+                   return fetch('/payments/failure?trade_seq=' + tradeSeq
+                       + '&reason=' + encodeURIComponent(reason)
+                       + '&failure_token=' + encodeURIComponent(failureToken)
+                       + '&failure_attempt=' + encodeURIComponent(failureAttempt), {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                    });
@@ -273,9 +278,9 @@
                    });
                }
 
-               function cancelPaymentAttempt(message, redirect) {
+               function cancelPaymentAttempt(message, redirect, reason) {
                    paymentFinalized = true;
-                   return postPaymentFailure(message === '결제 시간 만료' ? 'TIMEOUT' : 'USER_CANCEL').finally(function() {
+                   return postPaymentFailure(reason || 'USER_CANCEL').finally(function() {
                        if (redirect) {
                            redirectFail(message);
                        }
@@ -285,7 +290,16 @@
                // 결제 페이지를 실제로 벗어나면 PENDING을 즉시 해제한다.
                window.addEventListener('pagehide', function() {
                    if (isPaymentProcessing || paymentFinalized) return;
-                   navigator.sendBeacon('/payments/failure?trade_seq=' + tradeSeq + '&reason=PAGE_LEAVE');
+                   const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                   const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+                   const beaconBody = new Blob(
+                       ['_csrf=' + encodeURIComponent(csrfToken)],
+                       { type: 'application/x-www-form-urlencoded;charset=UTF-8' }
+                   );
+                   navigator.sendBeacon('/payments/failure?trade_seq=' + tradeSeq
+                       + '&reason=PAGE_LEAVE'
+                       + '&failure_token=' + encodeURIComponent(failureToken)
+                       + '&failure_attempt=' + encodeURIComponent(failureAttempt), beaconBody);
                });
 
                // 페이지 로드 시 타이머 시작
@@ -374,8 +388,11 @@
 	                       orderId: "ORDER_" + tradeSeq + "_" + new Date().getTime(),
 	                       orderName: bookTitle,
 	                       customerName: memberNicknm,
-	                       successUrl: baseUrl + "/payments/success?trade_seq=" + tradeSeq + addrParams,
-	                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq + "&reason=TOSS_FAIL"
+	                       successUrl: baseUrl + "/payments/success?trade_seq=" + tradeSeq + addrParams
+	                           + "&failure_attempt=" + encodeURIComponent(failureAttempt),
+	                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq
+	                           + "&reason=TOSS_FAIL&failure_token=" + encodeURIComponent(failureToken)
+	                           + "&failure_attempt=" + encodeURIComponent(failureAttempt)
 	                   }).catch(function(error) {
                        isPaymentProcessing = false; // 결제 취소/실패 시 플래그 해제
 

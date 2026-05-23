@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import project.payment.SafePaymentService;
 
 @Component
 @RequiredArgsConstructor
@@ -11,14 +12,13 @@ import org.springframework.stereotype.Component;
 public class TradeScheduler {
 
     private final TradeService tradeService;
+    private final SafePaymentService safePaymentService;
 
-    // 1분마다: 만료된 안전결제 초기화
+    // 1분마다: 결제 대기 만료 및 승인 결과 불명확 건을 정리한다.
     @Scheduled(fixedRate = 60000)
     public void cleanupExpiredSafePayments() {
-        int count = tradeService.resetExpiredSafePayments();
-        if (count > 0) {
-            log.info("만료된 안전결제 {}건 초기화 완료", count);
-        }
+        safePaymentService.cleanupExpiredSafePayments();
+        safePaymentService.reconcileUnknownConfirmations();
     }
 
     // 매일 자정: 15일 경과 구매 자동 확정

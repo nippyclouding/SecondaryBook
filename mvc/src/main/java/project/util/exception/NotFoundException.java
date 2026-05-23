@@ -7,6 +7,6 @@ package project.util.exception;
 public class NotFoundException extends ClientException {
 
     public NotFoundException(String message) {
-        super(message);
+        super(ErrorCode.NOT_FOUND, message);
     }
 }

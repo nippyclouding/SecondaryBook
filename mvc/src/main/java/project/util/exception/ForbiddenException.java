@@ -8,10 +8,10 @@ package project.util.exception;
 public class ForbiddenException extends ClientException {
 
     public ForbiddenException(String message) {
-        super(message);
+        super(ErrorCode.FORBIDDEN, message);
     }
 
     public ForbiddenException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.FORBIDDEN, message, cause);
     }
 }

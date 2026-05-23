@@ -26,6 +26,7 @@ import project.util.exception.trade.TradeNotFoundException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 
 @Slf4j
@@ -74,7 +75,7 @@ public class TradeService {
             throw new ForbiddenException("권한이 없습니다.");
         }
         SafePaymentStatus safePaymentStatus = trade.getSafe_payment_st();
-        if (safePaymentStatus == SafePaymentStatus.PENDING || safePaymentStatus == SafePaymentStatus.COMPLETED) {
+        if (safePaymentStatus == SafePaymentStatus.PENDING || safePaymentStatus == SafePaymentStatus.CONFIRMING || safePaymentStatus == SafePaymentStatus.COMPLETED) {
             throw new ForbiddenException("안전결제 진행 중이거나 완료된 거래는 수정할 수 없습니다.");
         }
     }
@@ -88,7 +89,7 @@ public class TradeService {
             throw new ForbiddenException("권한이 없습니다.");
         }
         SafePaymentStatus safePaymentStatus = trade.getSafe_payment_st();
-        if (safePaymentStatus == SafePaymentStatus.PENDING || safePaymentStatus == SafePaymentStatus.COMPLETED) {
+        if (safePaymentStatus == SafePaymentStatus.PENDING || safePaymentStatus == SafePaymentStatus.CONFIRMING || safePaymentStatus == SafePaymentStatus.COMPLETED) {
             throw new ForbiddenException("안전결제 진행 중이거나 완료된 거래는 삭제할 수 없습니다.");
         }
     }
@@ -295,17 +296,21 @@ public class TradeService {
         return updated > 0; // 0이면 이미 다른 사용자가 PENDING 중
     }
 
-    // 안전 결제 실패, NONE 으로 update, 채팅방으로 다시 돌아가도록 하기
     @Transactional
-    public void cancelSafePayment(long trade_seq) {
-        tradeMapper.updateSafePaymentStatus(trade_seq, SafePaymentStatus.NONE);
+    public boolean cancelSafePaymentForBuyerAndAttempt(long trade_seq, long pending_buyer_seq,
+                                                       LocalDateTime safePaymentExpireDtm) {
+        int updated = tradeMapper.updateSafePaymentStatusForBuyerAndAttempt(
+                trade_seq, SafePaymentStatus.NONE, pending_buyer_seq, safePaymentExpireDtm);
+        return updated > 0;
     }
 
-    // 현재 안전결제를 진행 중인 구매자 본인일 때만 취소한다.
     @Transactional
-    public boolean cancelSafePaymentForBuyer(long trade_seq, long pending_buyer_seq) {
-        int updated = tradeMapper.updateSafePaymentStatusForBuyer(trade_seq, SafePaymentStatus.NONE, pending_buyer_seq);
-        return updated > 0;
+    public boolean failConfirmingSafePaymentForBuyer(long trade_seq, long pending_buyer_seq) {
+        return tradeMapper.failConfirmingSafePaymentForBuyer(trade_seq, pending_buyer_seq) > 0;
+    }
+
+    public List<TradeVO> findExpiredPendingSafePayments() {
+        return tradeMapper.findExpiredPendingSafePayments();
     }
 
 
@@ -315,12 +320,6 @@ public class TradeService {
         if (seconds == null) return 0;
         else return seconds;
     }
-
-    @Transactional
-    public int resetExpiredSafePayments() {
-        return tradeMapper.resetExpiredSafePayments();
-    }
-
 
     // 판매자 수동 sold 변경
     @Transactional

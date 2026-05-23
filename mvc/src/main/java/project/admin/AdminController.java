@@ -14,6 +14,8 @@ import javax.validation.constraints.Size;
 import project.bookclub.BookClubService;
 import project.bookclub.vo.BookClubVO;
 import project.member.MemberService;
+import project.payment.PaymentEventService;
+import project.payment.PaymentIncidentResponse;
 import project.util.exception.InvalidRequestException;
 import project.util.logInOut.LogoutPendingManager;
 import project.util.logInOut.UserType;
@@ -30,6 +32,7 @@ import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class AdminController {
     private final TradeService tradeService;
     private final LogoutPendingManager logoutPendingManager;
     private final SettlementService settlementService;
+    private final PaymentEventService paymentEventService;
 
     @Value("${admin.login.code1}")
     private String adminCode1;
@@ -73,6 +77,8 @@ public class AdminController {
 
             // 5. 안전결제 데이터 추가
             model.addAttribute("safePayList", tradeService.findAllSafePays());
+            model.addAttribute("paymentIncidentCount",
+                    paymentEventService.findUnresolvedConfirmUnknownEvents().size());
             return "admin/dashboard";
         } catch (Exception e) {
             log.error("대시보드 로드 실패", e);
@@ -161,6 +167,20 @@ public class AdminController {
 
         int total = adminService.countAllSafePayListBySearch(searchVO);
         return new PageResult<>(list, total, searchVO.getPage(), searchVO.getSize());
+    }
+
+    // [API] 자동 확인/복구가 필요한 안전결제 이상 건
+    @GetMapping("/api/payment-incidents")
+    @ResponseBody
+    public Map<String, Object> getPaymentIncidents() {
+        List<PaymentIncidentResponse> list = paymentEventService.findUnresolvedConfirmUnknownEvents()
+                .stream()
+                .map(PaymentIncidentResponse::from)
+                .collect(Collectors.toList());
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("count", list.size());
+        return result;
     }
 
     // [API] 모임 목록

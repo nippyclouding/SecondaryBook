@@ -7,11 +7,19 @@ package project.util.exception;
  */
 public class ServerException extends RuntimeException {
 
+    private final ErrorCode errorCode;
+
     public ServerException(String message) {
         super(message);
+        this.errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
     }
 
     public ServerException(String message, Throwable cause) {
         super(message, cause);
+        this.errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 }

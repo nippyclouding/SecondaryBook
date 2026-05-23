@@ -1,0 +1,16 @@
+package project.payment;
+
+public enum PaymentEventType {
+    CONFIRMING,
+    CONFIRM_UNKNOWN,
+    SUCCESS,
+    TOSS_FAIL,
+    USER_CANCEL,
+    PAGE_LEAVE,
+    TIMEOUT,
+    EXPIRED_BY_SCHEDULER,
+    CANCEL_FAILED,
+    RECONCILE_REQUIRED,
+    RECONCILED_CANCEL,
+    RECONCILED_FAILURE
+}

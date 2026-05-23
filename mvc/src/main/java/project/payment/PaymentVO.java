@@ -3,6 +3,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,7 +19,8 @@ public class PaymentVO implements Serializable {
     private String addr_d;
 
     // 컨트롤러 검증용
-    private String safe_payment_status;   // 안전결제 상태 (PENDING / NONE)
+    private String safe_payment_status;   // 안전결제 상태 (NONE / PENDING / CONFIRMING / COMPLETED)
     private Long pending_buyer_seq;       // 안전결제 대상 구매자
+    private LocalDateTime safe_payment_expire_dtm; // 현재 결제 시도 만료시각
     private long remaining_seconds;       // 남은 결제 시간(초)
 }

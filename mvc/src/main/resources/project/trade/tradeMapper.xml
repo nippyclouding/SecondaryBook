@@ -403,8 +403,8 @@
         WHERE trade_seq = #{trade_seq}
     </select>
 
-    <!-- 안전결제 취소 (PENDING 상태일 때만 NONE으로 변경 가능) -->
-    <update id="updateSafePaymentStatus">
+    <!-- 브라우저 결제 시도 취소: 이전 탭의 콜백이 새 결제를 해제하지 못하도록 만료시각까지 확인 -->
+    <update id="updateSafePaymentStatusForBuyerAndAttempt">
         UPDATE sb_trade_info
         SET safe_payment_st = #{status},
             safe_payment_expire_dtm = NULL,
@@ -412,17 +412,34 @@
             upd_dtm = now()
         WHERE trade_seq = #{trade_seq}
           AND safe_payment_st = 'PENDING'
+          AND pending_buyer_seq = #{pending_buyer_seq}
+          AND safe_payment_expire_dtm = #{safe_payment_expire_dtm}
     </update>
 
-    <!-- 안전결제 취소 (현재 PENDING 구매자 본인일 때만 NONE으로 변경 가능) -->
-    <update id="updateSafePaymentStatusForBuyer">
+    <!-- Toss 승인 시작: 만료되지 않은 결제 진행 권한만 CONFIRMING으로 전환 -->
+    <update id="beginSafePaymentConfirmation">
         UPDATE sb_trade_info
-        SET safe_payment_st = #{status},
+        SET safe_payment_st = 'CONFIRMING',
+            safe_payment_expire_dtm = NULL,
+            upd_dtm = now()
+        WHERE trade_seq = #{trade_seq}
+          AND safe_payment_st = 'PENDING'
+          AND pending_buyer_seq = #{pending_buyer_seq}
+          AND sale_st = 'SALE'
+          AND del_dtm IS NULL
+          AND safe_payment_expire_dtm &gt; now()
+          AND safe_payment_expire_dtm = #{safe_payment_expire_dtm}
+    </update>
+
+    <!-- 승인 요청이 실패하거나 승인 후 보상 취소된 거래만 해제 -->
+    <update id="failConfirmingSafePaymentForBuyer">
+        UPDATE sb_trade_info
+        SET safe_payment_st = 'NONE',
             safe_payment_expire_dtm = NULL,
             pending_buyer_seq = NULL,
             upd_dtm = now()
         WHERE trade_seq = #{trade_seq}
-          AND safe_payment_st = 'PENDING'
+          AND safe_payment_st = 'CONFIRMING'
           AND pending_buyer_seq = #{pending_buyer_seq}
     </update>
 
@@ -435,19 +452,18 @@
             upd_dtm = now()
         WHERE trade_seq = #{trade_seq}
           AND safe_payment_st = 'NONE'
+          AND sale_st = 'SALE'
+          AND del_dtm IS NULL
     </update>
 
-    <!-- 만료된 안전결제 자동 초기화 -->
-    <update id="resetExpiredSafePayments">
-        UPDATE sb_trade_info
-        SET safe_payment_st = 'NONE',
-        safe_payment_expire_dtm = NULL,
-        pending_buyer_seq = NULL,
-        upd_dtm = now()
+    <!-- 스케줄러가 건별 알림/로그 처리할 만료 대상 조회 -->
+    <select id="findExpiredPendingSafePayments" resultType="project.trade.TradeVO">
+        SELECT trade_seq, pending_buyer_seq, safe_payment_expire_dtm
+        FROM sb_trade_info
         WHERE safe_payment_st = 'PENDING'
-        AND safe_payment_expire_dtm IS NOT NULL
-        AND safe_payment_expire_dtm &lt; now()
-    </update>
+          AND safe_payment_expire_dtm IS NOT NULL
+          AND safe_payment_expire_dtm &lt; now()
+    </select>
 
     <update id="updateStatus">
         UPDATE sb_trade_info
@@ -525,7 +541,7 @@
         addr_d = #{addr_d}
         WHERE trade_seq = #{trade_seq}
           AND sale_st = 'SALE'
-          AND safe_payment_st = 'PENDING'
+          AND safe_payment_st = 'CONFIRMING'
           AND pending_buyer_seq = #{member_buyer_seq}
     </update>
 
@@ -561,6 +577,7 @@
         SELECT
             COALESCE(t.safe_payment_st, 'NONE') AS safe_payment_status,
             t.pending_buyer_seq AS pending_buyer_seq,
+            t.safe_payment_expire_dtm AS safe_payment_expire_dtm,
             CASE
             WHEN t.safe_payment_st = 'PENDING' AND t.safe_payment_expire_dtm IS NOT NULL
             THEN GREATEST(0, CEIL(TIMESTAMPDIFF(SECOND, NOW(), t.safe_payment_expire_dtm)))
@@ -584,7 +601,7 @@
         FROM sb_trade_info
         WHERE member_seller_seq = #{member_seq}
           AND del_dtm IS NULL
-          AND safe_payment_st IN ('PENDING', 'COMPLETED')
+          AND safe_payment_st IN ('PENDING', 'CONFIRMING', 'COMPLETED')
     </select>
 
     <!-- 안전결제 내역 조회 -->

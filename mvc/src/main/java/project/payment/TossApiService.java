@@ -1,5 +1,6 @@
 package project.payment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.Map;
 public class TossApiService {
 
     private final WebClient tossPaymentWebClient;  // WebClientConfig에서 주입
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 토스 결제 승인 API 호출
@@ -42,12 +44,18 @@ public class TossApiService {
             return response;
 
         } catch (WebClientResponseException e) {
-            // 3. 토스 API 에러 응답 처리
             log.error("토스 API 에러: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
 
-            TossPaymentResponse errorResponse = new TossPaymentResponse();
-            errorResponse.setCode("TOSS_API_ERROR");
-            errorResponse.setMessage("결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+            TossPaymentResponse errorResponse = readErrorResponse(e);
+            // 5xx 응답은 승인 처리 여부를 단정할 수 없으므로 재조회 대상으로 남긴다.
+            if (e.getStatusCode().is5xxServerError()) {
+                errorResponse.setCode("CONFIRM_UNKNOWN");
+            } else if (errorResponse.getCode() == null) {
+                errorResponse.setCode("TOSS_API_ERROR");
+            }
+            if (errorResponse.getMessage() == null) {
+                errorResponse.setMessage("결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+            }
             return errorResponse;
 
         } catch (Exception e) {
@@ -73,7 +81,8 @@ public class TossApiService {
         try {
             tossPaymentWebClient
                     .post()
-                    .uri("/v1/payments/" + paymentKey + "/cancel")
+                    .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
+                    .header("Idempotency-Key", "cancel-" + paymentKey)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(Void.class)
@@ -88,6 +97,35 @@ public class TossApiService {
         } catch (Exception e) {
             log.error("토스 결제 취소 실패: paymentKey={}", paymentKey, e);
             throw new RuntimeException("토스 결제 취소 실패", e);
+        }
+    }
+
+    /**
+     * 승인 응답을 받지 못한 결제의 실제 상태를 조회한다.
+     */
+    public TossPaymentResponse getPayment(String paymentKey) {
+        try {
+            return tossPaymentWebClient
+                    .get()
+                    .uri("/v1/payments/{paymentKey}", paymentKey)
+                    .retrieve()
+                    .bodyToMono(TossPaymentResponse.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.warn("토스 결제 상태 조회 응답 오류: paymentKey={}, status={}", paymentKey, e.getStatusCode());
+            return readErrorResponse(e);
+        } catch (Exception e) {
+            log.error("토스 결제 상태 조회 실패: paymentKey={}", paymentKey, e);
+            return null;
+        }
+    }
+
+    private TossPaymentResponse readErrorResponse(WebClientResponseException e) {
+        try {
+            return objectMapper.readValue(e.getResponseBodyAsByteArray(), TossPaymentResponse.class);
+        } catch (Exception parseException) {
+            log.warn("토스 오류 응답 파싱 실패: status={}", e.getStatusCode(), parseException);
+            return new TossPaymentResponse();
         }
     }
 }

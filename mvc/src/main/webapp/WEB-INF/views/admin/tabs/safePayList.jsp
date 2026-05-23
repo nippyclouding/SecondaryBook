@@ -4,6 +4,40 @@
       <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
         <script src="/resources/js/paging/paging.js"></script>
 
+        <div class="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden mb-6">
+          <div class="p-6 border-b border-red-100 bg-red-50/50 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-lg text-gray-900">확인 필요한 결제</h3>
+              <p class="text-sm text-gray-500 mt-1">승인 결과 확인 지연 또는 자동 취소/복구 확인이 필요한 건입니다.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-bold">
+                <span id="paymentIncidentCount">${paymentIncidentCount}</span>건
+              </span>
+              <button type="button" onclick="loadPaymentIncidents()"
+                class="px-4 py-2 bg-white border border-red-200 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition">
+                새로고침
+              </button>
+            </div>
+          </div>
+          <table class="w-full">
+            <thead class="bg-gray-50 text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-left">거래 번호</th>
+                <th class="px-6 py-4 text-left">상태</th>
+                <th class="px-6 py-4 text-left">주문 번호</th>
+                <th class="px-6 py-4 text-left">토스 응답</th>
+                <th class="px-6 py-4 text-left">발생 시각</th>
+              </tr>
+            </thead>
+            <tbody id="paymentIncidentTableBody" class="divide-y divide-gray-50">
+              <tr>
+                <td colspan="5" class="px-6 py-8 text-center text-gray-500">데이터를 불러오는 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
           <div class="p-6 border-b border-gray-100 bg-gray-50/50">
@@ -74,6 +108,62 @@
           // Lucide 아이콘 초기화 (페이지 로드 시)
           if (typeof lucide !== 'undefined') {
             lucide.createIcons();
+          }
+
+          // 자동 복구가 끝나지 않은 결제 조회
+          function loadPaymentIncidents() {
+            fetch('/admin/api/payment-incidents')
+              .then(function (response) {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.json();
+              })
+              .then(function (data) {
+                document.getElementById('paymentIncidentCount').textContent = String(data.count || 0);
+                renderPaymentIncidents(data.list);
+              })
+              .catch(function () {
+                const tbody = document.getElementById('paymentIncidentTableBody');
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">이상 결제 데이터를 불러오지 못했습니다.</td></tr>';
+              });
+          }
+
+          function renderPaymentIncidents(list) {
+            const tbody = document.getElementById('paymentIncidentTableBody');
+            tbody.innerHTML = '';
+            if (!list || list.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">확인 필요한 결제가 없습니다.</td></tr>';
+              return;
+            }
+            list.forEach(function (incident) {
+              const tr = document.createElement('tr');
+              tr.className = 'hover:bg-red-50/30 transition-colors';
+              const values = [
+                incident.tradeSeq,
+                incident.eventType,
+                incident.orderId,
+                incident.tossCode || incident.tossStatus,
+                formatIncidentDate(incident.createdDtm)
+              ];
+              values.forEach(function (value) {
+                const td = document.createElement('td');
+                td.className = 'px-6 py-4 text-sm text-gray-700';
+                td.textContent = value || '-';
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+          }
+
+          function formatIncidentDate(value) {
+            if (!value) {
+              return '-';
+            }
+            if (Array.isArray(value)) {
+              return value.slice(0, 5).join('-');
+            }
+            return String(value).replace('T', ' ').substring(0, 16);
           }
 
           // 검색 및 페이징 함수
@@ -192,6 +282,7 @@
 
           // 페이지 로드 시 초기 데이터 로드 (즉시 실행 함수 아님)
           // 동적 로드 환경(AJAX로 탭 로드 등)에서는 이 스크립트가 실행될 때 호출됨
+          loadPaymentIncidents();
           searchPay(1);
 
         </script>

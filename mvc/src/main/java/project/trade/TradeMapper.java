@@ -8,6 +8,7 @@ import project.payment.PaymentVO;
 import project.trade.ENUM.SafePaymentStatus;
 import project.trade.ENUM.SaleStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -44,12 +45,18 @@ public interface TradeMapper {
                                     @Param("status") String status); // 판매내역 조회
 
     SafePaymentStatus findSafePaymentStatus(@Param("trade_seq") long trade_seq);
-    int updateSafePaymentStatus(@Param("trade_seq") long trade_seq,
-                                @Param("status") SafePaymentStatus status); // 안전 결제 상태 업데이트
 
-    int updateSafePaymentStatusForBuyer(@Param("trade_seq") long trade_seq,
-                                        @Param("status") SafePaymentStatus status,
-                                        @Param("pending_buyer_seq") long pending_buyer_seq);
+    int updateSafePaymentStatusForBuyerAndAttempt(@Param("trade_seq") long trade_seq,
+                                                  @Param("status") SafePaymentStatus status,
+                                                  @Param("pending_buyer_seq") long pending_buyer_seq,
+                                                  @Param("safe_payment_expire_dtm") LocalDateTime safePaymentExpireDtm);
+
+    int beginSafePaymentConfirmation(@Param("trade_seq") long trade_seq,
+                                     @Param("pending_buyer_seq") long pending_buyer_seq,
+                                     @Param("safe_payment_expire_dtm") LocalDateTime safePaymentExpireDtm);
+
+    int failConfirmingSafePaymentForBuyer(@Param("trade_seq") long trade_seq,
+                                           @Param("pending_buyer_seq") long pending_buyer_seq);
 
     // 안전결제 만료 시간 관련
     int updateSafePaymentWithExpire(@Param("trade_seq") long trade_seq,
@@ -61,7 +68,7 @@ public interface TradeMapper {
 
     Long findPendingBuyerSeq(@Param("trade_seq") long trade_seq);
 
-    int resetExpiredSafePayments();
+    List<TradeVO> findExpiredPendingSafePayments();
 
 
     // 판매자 수동 sold 변경 (계좌 거래용)
@@ -92,7 +99,7 @@ public interface TradeMapper {
 
     List<String> findAllImageUrlsByMember(@Param("member_seq") long member_seq);
 
-    // 회원 탈퇴 전 활성 결제 건 수 조회 (PENDING: 진행 중, COMPLETED: 구매 미확정)
+    // 회원 탈퇴 전 활성 결제 건 수 조회 (PENDING/CONFIRMING: 진행 중, COMPLETED: 구매 미확정)
     int countActivePaymentsByMember(@Param("member_seq") long member_seq);
 
     // 안전결제 리스트 조회 (관리자용)

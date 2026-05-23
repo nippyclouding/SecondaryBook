@@ -75,7 +75,7 @@ public class TradeVO implements Serializable {
     private String search_word;
     private String sort;
 
-    private SafePaymentStatus safe_payment_st; // 안전결제 상태: NONE, PENDING, COMPLETED
+    private SafePaymentStatus safe_payment_st; // 안전결제 상태: NONE, PENDING, CONFIRMING, COMPLETED
     private LocalDateTime safe_payment_expire_dtm; // 안전결제 만료 시간
 
     private Boolean confirm_purchase;

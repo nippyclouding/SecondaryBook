@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
+import java.time.Duration;
 import java.util.Base64;
 
 @Configuration
@@ -88,7 +89,8 @@ public class WebClientConfig {
                 .maxConnections(50)
                 .build();
 
-        HttpClient httpClient = HttpClient.create(provider);
+        HttpClient httpClient = HttpClient.create(provider)
+                .responseTimeout(Duration.ofSeconds(30));
 
         return WebClient.builder()
                 .baseUrl(tossBaseUrl)

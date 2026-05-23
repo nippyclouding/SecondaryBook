@@ -19,6 +19,7 @@ import project.trade.ENUM.SafePaymentStatus;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -473,41 +474,17 @@ class TradeServiceTest {
         }
 
         @Test
-        @DisplayName("안전결제 취소 - NONE 상태로 복구")
-        void 안전결제취소_NONE복구() {
-            // when
-            tradeService.cancelSafePayment(100L);
+        @DisplayName("브라우저 결제 시도 취소 - 같은 만료시각의 결제만 NONE 상태로 복구")
+        void 안전결제_시도기반취소_만료시각전달() {
+            LocalDateTime expiresAt = LocalDateTime.of(2026, 5, 23, 14, 5);
+            when(tradeMapper.updateSafePaymentStatusForBuyerAndAttempt(
+                    100L, SafePaymentStatus.NONE, 2L, expiresAt)).thenReturn(1);
 
-            // then
-            verify(tradeMapper).updateSafePaymentStatus(100L, SafePaymentStatus.NONE);
-        }
+            boolean result = tradeService.cancelSafePaymentForBuyerAndAttempt(100L, 2L, expiresAt);
 
-        @Test
-        @DisplayName("안전결제 구매자 취소 - 현재 구매자이면 NONE 상태로 복구")
-        void 안전결제_구매자취소_현재구매자이면_NONE복구() {
-            // given
-            when(tradeMapper.updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 2L)).thenReturn(1);
-
-            // when
-            boolean result = tradeService.cancelSafePaymentForBuyer(100L, 2L);
-
-            // then
             assertThat(result).isTrue();
-            verify(tradeMapper).updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 2L);
-        }
-
-        @Test
-        @DisplayName("안전결제 구매자 취소 - 현재 구매자가 아니면 false 반환")
-        void 안전결제_구매자취소_현재구매자가아니면_false() {
-            // given
-            when(tradeMapper.updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 999L)).thenReturn(0);
-
-            // when
-            boolean result = tradeService.cancelSafePaymentForBuyer(100L, 999L);
-
-            // then
-            assertThat(result).isFalse();
-            verify(tradeMapper).updateSafePaymentStatusForBuyer(100L, SafePaymentStatus.NONE, 999L);
+            verify(tradeMapper).updateSafePaymentStatusForBuyerAndAttempt(
+                    100L, SafePaymentStatus.NONE, 2L, expiresAt);
         }
 
         @Test
@@ -536,18 +513,6 @@ class TradeServiceTest {
             assertThat(seconds).isEqualTo(0L);
         }
 
-        @Test
-        @DisplayName("만료된 안전결제 리셋")
-        void 만료된_안전결제_리셋() {
-            // given
-            when(tradeMapper.resetExpiredSafePayments()).thenReturn(3);
-
-            // when
-            int count = tradeService.resetExpiredSafePayments();
-
-            // then
-            assertThat(count).isEqualTo(3);
-        }
     }
 
     // ========================================================================

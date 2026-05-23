@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     book_publisher              VARCHAR(255),
     book_img                    VARCHAR(500),
     book_org_price              INT,
-    safe_payment_st             ENUM('NONE','PENDING','COMPLETED') DEFAULT 'NONE',
+    safe_payment_st             ENUM('NONE','PENDING','CONFIRMING','COMPLETED') NOT NULL DEFAULT 'NONE',
     safe_payment_expire_dtm     TIMESTAMP           NULL,
     pending_buyer_seq           BIGINT,
     confirm_purchase            TINYINT(1)          NULL,
@@ -134,6 +134,26 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
     FOREIGN KEY (member_seller_seq) REFERENCES member_info(member_seq),
     FOREIGN KEY (member_buyer_seq) REFERENCES member_info(member_seq),
     FOREIGN KEY (category_seq) REFERENCES category(category_seq)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 결제 이벤트 이력 (안전결제 성공/실패/보상 처리 추적)
+-- payment_key는 승인 결과 재조회/자동 취소 복구에 필요하므로 운영 로그에 보관한다.
+-- 거래/회원이 논리 삭제되어도 결제 감사 이력은 보존되어야 하므로 외래 키는 두지 않는다.
+CREATE TABLE IF NOT EXISTS payment_event_log (
+    payment_event_seq       BIGINT          AUTO_INCREMENT PRIMARY KEY,
+    trade_seq               BIGINT          NOT NULL,
+    member_seq              BIGINT          NULL,
+    event_type              ENUM('CONFIRMING','CONFIRM_UNKNOWN','SUCCESS','TOSS_FAIL','USER_CANCEL','PAGE_LEAVE','TIMEOUT','EXPIRED_BY_SCHEDULER','CANCEL_FAILED','RECONCILE_REQUIRED','RECONCILED_CANCEL','RECONCILED_FAILURE') NOT NULL,
+    payment_key             VARCHAR(200)    NULL,
+    order_id                VARCHAR(100)    NULL,
+    amount                  INT             NULL,
+    method                  VARCHAR(50)     NULL,
+    toss_status             VARCHAR(50)     NULL,
+    toss_code               VARCHAR(100)    NULL,
+    toss_message            VARCHAR(500)    NULL,
+    created_dtm             TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_payment_event_trade_latest (trade_seq, payment_event_seq),
+    INDEX idx_payment_event_type (event_type, created_dtm)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 거래 찜
