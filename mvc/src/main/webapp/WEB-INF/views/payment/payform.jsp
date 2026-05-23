@@ -252,8 +252,8 @@
                    }, 1000);
                }
 
-               function postPaymentState(endpoint) {
-                   return fetch(endpoint + '?trade_seq=' + tradeSeq, {
+               function postPaymentFailure(reason) {
+                   return fetch('/payments/failure?trade_seq=' + tradeSeq + '&reason=' + encodeURIComponent(reason), {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                    });
@@ -265,7 +265,7 @@
                }
 
                function handleTimeout() {
-                   postPaymentState('/payments/timeout').then(function() {
+                   postPaymentFailure('TIMEOUT').then(function() {
                        alert('결제 시간이 만료되었습니다. 다시 시도해주세요.');
                        redirectFail('결제 시간 만료');
                    }).catch(function() {
@@ -275,7 +275,7 @@
 
                function cancelPaymentAttempt(message, redirect) {
                    paymentFinalized = true;
-                   return postPaymentState('/payments/cancel').finally(function() {
+                   return postPaymentFailure(message === '결제 시간 만료' ? 'TIMEOUT' : 'USER_CANCEL').finally(function() {
                        if (redirect) {
                            redirectFail(message);
                        }
@@ -285,7 +285,7 @@
                // 결제 페이지를 실제로 벗어나면 PENDING을 즉시 해제한다.
                window.addEventListener('pagehide', function() {
                    if (isPaymentProcessing || paymentFinalized) return;
-                   navigator.sendBeacon('/payments/cancel?trade_seq=' + tradeSeq);
+                   navigator.sendBeacon('/payments/failure?trade_seq=' + tradeSeq + '&reason=PAGE_LEAVE');
                });
 
                // 페이지 로드 시 타이머 시작
@@ -375,15 +375,15 @@
 	                       orderName: bookTitle,
 	                       customerName: memberNicknm,
 	                       successUrl: baseUrl + "/payments/success?trade_seq=" + tradeSeq + addrParams,
-	                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq
+	                       failUrl: baseUrl + "/payments/fail?trade_seq=" + tradeSeq + "&reason=TOSS_FAIL"
 	                   }).catch(function(error) {
                        isPaymentProcessing = false; // 결제 취소/실패 시 플래그 해제
 
                        if (error.code === "USER_CANCEL") {
-                           cancelPaymentAttempt('결제가 취소되었습니다.', true);
+                           cancelPaymentAttempt('결제가 취소되었습니다.', true, 'USER_CANCEL');
                        } else {
                            alert(error.message);
-                           cancelPaymentAttempt(error.message || '결제에 실패했습니다.', true);
+                           cancelPaymentAttempt(error.message || '결제에 실패했습니다.', true, 'TOSS_FAIL');
                        }
                    });
                });

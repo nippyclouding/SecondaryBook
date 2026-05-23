@@ -261,15 +261,14 @@ public class PaymentController {
     public String fail(@RequestParam(required = false) String code,
                        @RequestParam(required = false) String message,
                        @RequestParam(required = false) Long trade_seq,
+                       @RequestParam(defaultValue = "TOSS_FAIL") String reason,
                        Model model, HttpSession session) {
 
         MemberVO sessionMember = (MemberVO) session.getAttribute(Const.SESSION);
         if (trade_seq != null && sessionMember != null) {
             TradeVO trade = tradeService.search(trade_seq);
-            // 채팅방 참여자(구매자)인지 확인 (결제 실패 시점에서 member_buyer_seq는 아직 설정되지 않았으므로 채팅방으로 검증)
-            if (trade != null && chatroomService.isBuyerOfTrade(trade_seq, sessionMember.getMember_seq())) {
-                handleFailedSafePayment(trade_seq, sessionMember.getMember_seq(), true);
-            } else {
+            // 실패 페이지는 화면 표시만 담당한다. DB 변경은 POST /payments/failure에서만 처리한다.
+            if (trade == null || !chatroomService.isBuyerOfTrade(trade_seq, sessionMember.getMember_seq())) {
                 return "redirect:/"; // 구매자가 아닌 경우 홈으로 리다이렉트 (url로 거래 접근 방지)
             }
         }
@@ -277,22 +276,38 @@ public class PaymentController {
         model.addAttribute("errorCode", code);
         model.addAttribute("errorMessage", message);
         model.addAttribute("trade_seq", trade_seq);
+        model.addAttribute("reason", reason);
 
         return "payment/fail";
     }
 
-    // 결제 취소 처리 (토스 결제창 취소 또는 결제 페이지 이탈 시 호출)
+    // 모든 결제 실패/취소/만료 상태 변경은 이 API로 통일한다.
+    @PostMapping("/payments/failure")
+    @ResponseBody
+    public Map<String, Object> failure(@RequestParam Long trade_seq,
+                                       @RequestParam(defaultValue = "TOSS_FAIL") String reason,
+                                       HttpSession session) {
+        return failPendingPayment(trade_seq, session, failureMessage(reason));
+    }
+
+    // 기존 호출 호환용: 내부 처리는 /payments/failure와 같은 로직을 사용한다.
     @PostMapping("/payments/cancel")
     @ResponseBody
     public Map<String, Object> cancel(@RequestParam Long trade_seq, HttpSession session) {
-        return failPendingPayment(trade_seq, session, "결제가 취소되었습니다.");
+        return failPendingPayment(trade_seq, session, failureMessage("USER_CANCEL"));
     }
 
-    // 결제 타임아웃 처리 (프론트에서 5분 경과 시 호출)
+    // 기존 호출 호환용: 내부 처리는 /payments/failure와 같은 로직을 사용한다.
     @PostMapping("/payments/timeout")
     @ResponseBody
     public Map<String, Object> timeout(@RequestParam Long trade_seq, HttpSession session) {
-        return failPendingPayment(trade_seq, session, "결제 시간이 만료되었습니다.");
+        return failPendingPayment(trade_seq, session, failureMessage("TIMEOUT"));
+    }
+
+    private String failureMessage(String reason) {
+        if ("TIMEOUT".equals(reason)) return "결제 시간이 만료되었습니다.";
+        if ("PAGE_LEAVE".equals(reason) || "USER_CANCEL".equals(reason)) return "결제가 취소되었습니다.";
+        return "결제에 실패했습니다.";
     }
 
     private Map<String, Object> failPendingPayment(Long trade_seq, HttpSession session, String successMessage) {

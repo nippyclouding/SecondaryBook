@@ -91,12 +91,42 @@ class PaymentControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /payments/fail - 결제 실패")
+    @DisplayName("GET /payments/fail - 결제 실패 화면")
     class PaymentFail {
 
         @Test
-        @DisplayName("현재 결제 구매자 실패 - PENDING을 NONE으로 복구하고 실패 메시지를 전송한다")
-        void currentBuyerFailure_cancelsPendingAndSendsMessage() throws Exception {
+        @DisplayName("실패 화면 표시 - DB 상태는 변경하지 않는다")
+        void showFailPage_doesNotChangePaymentState() throws Exception {
+            // given
+            when(tradeService.search(100L)).thenReturn(trade(100L));
+            when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
+
+            // when & then
+            mockMvc.perform(get("/payments/fail")
+                            .session(sessionWith(2L))
+                            .param("trade_seq", "100")
+                            .param("code", "PAY_PROCESS_CANCELED")
+                            .param("message", "결제가 취소되었습니다.")
+                            .param("reason", "TOSS_FAIL"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("payment/fail"))
+                    .andExpect(model().attribute("errorCode", "PAY_PROCESS_CANCELED"))
+                    .andExpect(model().attribute("errorMessage", "결제가 취소되었습니다."))
+                    .andExpect(model().attribute("reason", "TOSS_FAIL"));
+
+            verify(tradeService, never()).cancelSafePaymentForBuyer(anyLong(), anyLong());
+            verify(messageService, never()).saveMessage(any());
+            verify(chatMessagePublisher, never()).publishPayment(anyLong(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /payments/failure - 결제 실패 상태 처리")
+    class PaymentFailure {
+
+        @Test
+        @DisplayName("토스 실패 - PENDING을 NONE으로 복구한다")
+        void tossFail_cancelsPending() throws Exception {
             // given
             when(tradeService.search(100L)).thenReturn(trade(100L));
             when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
@@ -105,15 +135,12 @@ class PaymentControllerTest {
             when(chatroomService.findChatRoomSeqByTradeAndBuyer(100L, 2L)).thenReturn(10L);
 
             // when & then
-            mockMvc.perform(get("/payments/fail")
+            mockMvc.perform(post("/payments/failure")
                             .session(sessionWith(2L))
                             .param("trade_seq", "100")
-                            .param("code", "PAY_PROCESS_CANCELED")
-                            .param("message", "결제가 취소되었습니다."))
+                            .param("reason", "TOSS_FAIL"))
                     .andExpect(status().isOk())
-                    .andExpect(view().name("payment/fail"))
-                    .andExpect(model().attribute("errorCode", "PAY_PROCESS_CANCELED"))
-                    .andExpect(model().attribute("errorMessage", "결제가 취소되었습니다."));
+                    .andExpect(content().json("{\"success\":true,\"message\":\"결제에 실패했습니다.\"}"));
 
             verify(tradeService).cancelSafePaymentForBuyer(100L, 2L);
             verify(messageService).saveMessage(any());
@@ -121,34 +148,8 @@ class PaymentControllerTest {
         }
 
         @Test
-        @DisplayName("현재 결제 구매자가 아닌 실패 요청 - PENDING을 변경하지 않고 메시지도 전송하지 않는다")
-        void otherBuyerFailure_doesNotCancelPending() throws Exception {
-            // given
-            when(tradeService.search(100L)).thenReturn(trade(100L));
-            when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
-            when(tradeService.getPaymentCheckInfo(100L)).thenReturn(paymentCheck(3L));
-
-            // when & then
-            mockMvc.perform(get("/payments/fail")
-                            .session(sessionWith(2L))
-                            .param("trade_seq", "100")
-                            .param("message", "결제 실패"))
-                    .andExpect(status().isOk())
-                    .andExpect(view().name("payment/fail"));
-
-            verify(tradeService, never()).cancelSafePaymentForBuyer(100L, 2L);
-            verify(messageService, never()).saveMessage(any());
-            verify(chatMessagePublisher, never()).publishPayment(anyLong(), any());
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /payments/cancel - 결제 취소")
-    class PaymentCancel {
-
-        @Test
-        @DisplayName("현재 결제 구매자 취소 - PENDING을 NONE으로 복구한다")
-        void currentBuyerCancel_cancelsPending() throws Exception {
+        @DisplayName("사용자 취소 - PENDING을 NONE으로 복구한다")
+        void userCancel_cancelsPending() throws Exception {
             // given
             when(tradeService.search(100L)).thenReturn(trade(100L));
             when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
@@ -157,9 +158,10 @@ class PaymentControllerTest {
             when(chatroomService.findChatRoomSeqByTradeAndBuyer(100L, 2L)).thenReturn(10L);
 
             // when & then
-            mockMvc.perform(post("/payments/cancel")
+            mockMvc.perform(post("/payments/failure")
                             .session(sessionWith(2L))
-                            .param("trade_seq", "100"))
+                            .param("trade_seq", "100")
+                            .param("reason", "USER_CANCEL"))
                     .andExpect(status().isOk())
                     .andExpect(content().json("{\"success\":true,\"message\":\"결제가 취소되었습니다.\"}"));
 
@@ -169,32 +171,8 @@ class PaymentControllerTest {
         }
 
         @Test
-        @DisplayName("현재 결제 구매자가 아닌 취소 - PENDING을 변경하지 않는다")
-        void otherBuyerCancel_doesNotCancelPending() throws Exception {
-            // given
-            when(tradeService.search(100L)).thenReturn(trade(100L));
-            when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
-            when(tradeService.getPaymentCheckInfo(100L)).thenReturn(paymentCheck(3L));
-
-            // when & then
-            mockMvc.perform(post("/payments/cancel")
-                            .session(sessionWith(2L))
-                            .param("trade_seq", "100"))
-                    .andExpect(status().isOk())
-                    .andExpect(content().json("{\"success\":false,\"message\":\"진행 중인 결제를 찾을 수 없습니다.\"}"));
-
-            verify(tradeService, never()).cancelSafePaymentForBuyer(100L, 2L);
-            verify(messageService, never()).saveMessage(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /payments/timeout - 결제 시간 만료")
-    class PaymentTimeout {
-
-        @Test
-        @DisplayName("현재 결제 구매자 타임아웃 - PENDING을 NONE으로 복구한다")
-        void currentBuyerTimeout_cancelsPending() throws Exception {
+        @DisplayName("타임아웃 - PENDING을 NONE으로 복구한다")
+        void timeout_cancelsPending() throws Exception {
             // given
             when(tradeService.search(100L)).thenReturn(trade(100L));
             when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
@@ -203,9 +181,10 @@ class PaymentControllerTest {
             when(chatroomService.findChatRoomSeqByTradeAndBuyer(100L, 2L)).thenReturn(10L);
 
             // when & then
-            mockMvc.perform(post("/payments/timeout")
+            mockMvc.perform(post("/payments/failure")
                             .session(sessionWith(2L))
-                            .param("trade_seq", "100"))
+                            .param("trade_seq", "100")
+                            .param("reason", "TIMEOUT"))
                     .andExpect(status().isOk())
                     .andExpect(content().json("{\"success\":true,\"message\":\"결제 시간이 만료되었습니다.\"}"));
 
@@ -215,22 +194,24 @@ class PaymentControllerTest {
         }
 
         @Test
-        @DisplayName("현재 결제 구매자가 아닌 타임아웃 - PENDING을 변경하지 않는다")
-        void otherBuyerTimeout_doesNotCancelPending() throws Exception {
+        @DisplayName("현재 결제 구매자가 아닌 실패 처리 - PENDING을 변경하지 않는다")
+        void otherBuyerFailure_doesNotCancelPending() throws Exception {
             // given
             when(tradeService.search(100L)).thenReturn(trade(100L));
             when(chatroomService.isBuyerOfTrade(100L, 2L)).thenReturn(true);
             when(tradeService.getPaymentCheckInfo(100L)).thenReturn(paymentCheck(3L));
 
             // when & then
-            mockMvc.perform(post("/payments/timeout")
+            mockMvc.perform(post("/payments/failure")
                             .session(sessionWith(2L))
-                            .param("trade_seq", "100"))
+                            .param("trade_seq", "100")
+                            .param("reason", "TOSS_FAIL"))
                     .andExpect(status().isOk())
                     .andExpect(content().json("{\"success\":false,\"message\":\"진행 중인 결제를 찾을 수 없습니다.\"}"));
 
             verify(tradeService, never()).cancelSafePaymentForBuyer(100L, 2L);
             verify(messageService, never()).saveMessage(any());
+            verify(chatMessagePublisher, never()).publishPayment(anyLong(), any());
         }
     }
 

@@ -86,4 +86,26 @@
     </div>
 </div>
 
+
+<c:if test="${not empty trade_seq}">
+    <div id="paymentFailMeta"
+         data-trade-seq="<c:out value='${trade_seq}'/>"
+         data-reason="<c:out value='${reason}'/>"></div>
+    <script>
+        (function() {
+            const meta = document.getElementById('paymentFailMeta');
+            if (!meta) return;
+
+            const tradeSeq = meta.dataset.tradeSeq;
+            const reason = meta.dataset.reason || 'TOSS_FAIL';
+            if (!tradeSeq) return;
+
+            fetch('/payments/failure?trade_seq=' + encodeURIComponent(tradeSeq) + '&reason=' + encodeURIComponent(reason), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }).catch(function() {});
+        })();
+    </script>
+</c:if>
+
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
