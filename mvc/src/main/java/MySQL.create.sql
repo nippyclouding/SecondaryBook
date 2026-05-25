@@ -94,6 +94,8 @@ CREATE TABLE IF NOT EXISTS member_oauth (
 -- =============================================
 
 -- 중고거래 정보
+-- 계약/대금결제/재화 공급 기록: 전자상거래법 시행령 기준 거래 종료 후 5년 보존 대상.
+-- 화면상 삭제는 del_dtm 논리 삭제로 처리하며, 법정 보존기간 중 물리 삭제하지 않는다.
 CREATE TABLE IF NOT EXISTS sb_trade_info (
     trade_seq                   BIGINT              AUTO_INCREMENT PRIMARY KEY,
     member_seller_seq           BIGINT              NOT NULL,
@@ -137,6 +139,7 @@ CREATE TABLE IF NOT EXISTS sb_trade_info (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 결제 이벤트 이력 (안전결제 성공/실패/보상 처리 추적)
+-- 대금결제 및 재화 공급 관련 감사 기록으로 거래 종료 후 5년 보존 대상이다.
 -- payment_key는 승인 결과 재조회/자동 취소 복구에 필요하므로 운영 로그에 보관한다.
 -- 거래/회원이 논리 삭제되어도 결제 감사 이력은 보존되어야 하므로 외래 키는 두지 않는다.
 CREATE TABLE IF NOT EXISTS payment_event_log (
@@ -336,6 +339,7 @@ CREATE TABLE IF NOT EXISTS notice (
 -- 8. 정산 관련
 -- =============================================
 
+-- 지급 및 정산 증빙은 대금결제 기록으로 거래 종료 후 5년 보존 대상이다.
 CREATE TABLE IF NOT EXISTS settlement (
     settlement_seq          BIGINT          AUTO_INCREMENT PRIMARY KEY,
     trade_seq               BIGINT          NOT NULL UNIQUE,  -- 1거래 1정산 보장

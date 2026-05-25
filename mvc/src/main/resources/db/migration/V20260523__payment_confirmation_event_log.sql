@@ -8,6 +8,8 @@ ALTER TABLE sb_trade_info
 
 -- payment_key is retained for reconciliation/cancel recovery. Do not add foreign keys:
 -- payment audit history must remain queryable after logical deletion of a member or trade.
+-- Keep payment_event_log for at least 5 years as a payment/supply transaction record
+-- under the Korean Electronic Commerce Consumer Protection Act enforcement decree.
 CREATE TABLE IF NOT EXISTS payment_event_log (
     payment_event_seq       BIGINT          AUTO_INCREMENT PRIMARY KEY,
     trade_seq               BIGINT          NOT NULL,
